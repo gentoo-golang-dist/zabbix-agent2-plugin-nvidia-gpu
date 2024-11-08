@@ -1,1 +1,1 @@
-Soon here will be code for nvidia plugin
+# Nvidia plugin for Zabbix agent 2
