@@ -90,15 +90,15 @@ type Device interface {
 
 // MemoryInfoV2 represents the memory information of the device (in bytes).
 type MemoryInfoV2 struct {
-	Total    uint64 // Total memory available
-	Reserved uint64 // Memory reserved by the system
-	Free     uint64 // Free memory available
-	Used     uint64 // Memory currently being used + reserved
+	Total    uint64 `json:"total_memory_bytes"`    // Total memory available
+	Reserved uint64 `json:"reserved_memory_bytes"` // Memory reserved by the system
+	Free     uint64 `json:"free_memory_bytes"`     // Free memory available
+	Used     uint64 `json:"used_memory_bytes"`     // Memory currently being used + reserved
 }
 
 // MemoryInfo represents the memory information of the device (in bytes).
 type MemoryInfo struct {
-	Total uint64 // Total memory available
-	Free  uint64 // Free memory available
-	Used  uint64 // Memory currently being used
+	Total uint64 `json:"total_memory_bytes"` // Total memory available
+	Free  uint64 `json:"free_memory_bytes"`  // Free memory available
+	Used  uint64 `json:"used_memory_bytes"`  // Memory currently being used
 }

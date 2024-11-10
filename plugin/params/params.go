@@ -21,22 +21,15 @@ package params
 import "golang.zabbix.com/sdk/metric"
 
 const (
-	// UsernameParameterName username parameter name.
-	UsernameParameterName = "Username"
 	// PasswordParameterName password parameter name.
-	PasswordParameterName = "Password"
+	DeviceUUIDParamName = "DeviceUUID"
 )
 
 //nolint:gochecknoglobals // global constants.
 var (
 	// Params groups all base parameters common for all connections.
-	Params = []*metric.Param{Username, Password}
-
-	// Username is an example parameter.
-	Username = metric.NewConnParam(
-		UsernameParameterName, "Example parameter mimics a username.",
-	).WithSession().WithDefault("Zabbix")
+	Params = []*metric.Param{DeviceUUID}
 
 	// Password is an example parameter.
-	Password = metric.NewConnParam(PasswordParameterName, "Example parameter mimics a password.")
+	DeviceUUID = metric.NewConnParam(DeviceUUIDParamName, "Example parameter mimics a password.").WithDefault("")
 )

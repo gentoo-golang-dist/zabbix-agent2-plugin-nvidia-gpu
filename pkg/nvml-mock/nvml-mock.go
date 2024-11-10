@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	// _ nvml.Device = (*MockDevice)(nil)
+	_ nvml.Device = (*MockDevice)(nil)
 	_ nvml.Runner = (*MockRunner)(nil)
 )
 
@@ -19,6 +19,14 @@ type MockRunner struct {
 }
 
 type MockDevice struct {
+	Temperature    int
+	Name           string
+	MemoryInfo     *nvml.MemoryInfo
+	MemoryInfoV2   *nvml.MemoryInfoV2
+	PcieThroughput uint
+	FanSpeed       uint
+	PowerUsage     uint
+	WantedErr      error
 }
 
 func (m *MockRunner) InitNVML() error {
@@ -118,4 +126,150 @@ func (m *MockRunner) Close() error {
 	}
 
 	return nil
+}
+
+// Get the temperature of the device.
+func (m *MockDevice) GetTemperature() (int, error) {
+	if m.WantedErr != nil {
+		return 0, m.WantedErr
+	}
+
+	return m.Temperature, nil
+}
+
+// Get the memory information for the device.
+func (m *MockDevice) GetMemoryInfo() (*nvml.MemoryInfo, error) {
+	if m.WantedErr != nil {
+		return nil, m.WantedErr
+	}
+
+	return m.MemoryInfo, nil
+}
+
+func (m *MockDevice) GetBAR1MemoryInfo() (*nvml.MemoryInfo, error) {
+	if m.WantedErr != nil {
+		return nil, m.WantedErr
+	}
+
+	return m.MemoryInfo, nil
+}
+
+// Get the memory information for the device.
+func (m *MockDevice) GetMemoryInfoV2() (*nvml.MemoryInfoV2, error) {
+	if m.WantedErr != nil {
+		return nil, m.WantedErr
+	}
+
+	return m.MemoryInfoV2, nil
+}
+
+// Get the fan speed of the device.
+func (m *MockDevice) GetFanSpeed() (uint, error) {
+	if m.WantedErr != nil {
+		return 0, m.WantedErr
+	}
+
+	return m.FanSpeed, nil
+}
+
+// Get PCIe throughput (TX or RX).
+func (m *MockDevice) GetPcieThroughput(metricType nvml.PcieMetricType) (uint, error) {
+	if m.WantedErr != nil {
+		return 0, m.WantedErr
+	}
+
+	return m.PcieThroughput, nil
+}
+
+// GetUtilizationRates returns the GPU and memory utilization in that order (GPU, Memory).
+func (m *MockDevice) GetUtilizationRates() (uint, uint, error) {
+	if m.WantedErr != nil {
+		return 0, 0, m.WantedErr
+	}
+
+}
+
+// Get the UUID of the device.
+func (m *MockDevice) GetUUID() (string, error) {
+	if m.WantedErr != nil {
+		return "", m.WantedErr
+	}
+}
+
+// Get the name of the device.
+func (m *MockDevice) GetName() (string, error) {
+	if m.WantedErr != nil {
+		return "", m.WantedErr
+	}
+}
+
+// Get the serial number of the device.
+func (m *MockDevice) GetSerial() (string, error) {
+	if m.WantedErr != nil {
+		return "", m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetPowerUsage() (uint, error) {
+	if m.WantedErr != nil {
+		return 0, m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetPerformanceState() (uint, error) {
+	if m.WantedErr != nil {
+		return 0, m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetClockInfo(clockType nvml.ClockType) (uint, error) {
+	if m.WantedErr != nil {
+		return 0, m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetPowerManagementLimit() (uint, error) {
+	if m.WantedErr != nil {
+		return 0, m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetTotalEnergyConsumption() (uint64, error) {
+	if m.WantedErr != nil {
+		return 0, m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetEncoderStats() (uint, uint, uint, error) {
+	if m.WantedErr != nil {
+		return 0, 0, 0, m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetEncoderUtilization() (uint, uint, error) {
+	if m.WantedErr != nil {
+		return 0, 0, m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetDecoderUtilization() (uint, uint, error) {
+	if m.WantedErr != nil {
+		return 0, 0, m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetMemoryErrorCounter(
+	errorType nvml.MemoryErrorType,
+	memoryLocation nvml.MemoryLocation,
+	counterType nvml.EccCounterType,
+) (uint64, error) {
+	if m.WantedErr != nil {
+		return 0, m.WantedErr
+	}
+}
+
+func (m *MockDevice) GetEccMode() (bool, bool, error) {
+	if m.WantedErr != nil {
+		return false, false, m.WantedErr
+	}
 }
