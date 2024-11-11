@@ -116,14 +116,14 @@ func (p *nvmlPlugin) Stop() {
 }
 
 func initNVML(runner nvml.Runner, loger log.Logger) error {
-	err := runner.InitNVMLv2()
+	err := runner.InitV2()
 	if err == nil {
 		return nil
 	}
 
 	loger.Debugf("failed to init runner with InitNVMLv2 %v", err)
 
-	err = runner.InitNVML()
+	err = runner.Init()
 	if err != nil {
 		return errs.Wrap(err, "failed to init NVML library")
 	}
@@ -366,12 +366,22 @@ func (p *nvmlPlugin) registerMetrics() error {
 		},
 		"nvml.device.utilization": {
 			metric: metric.New(
-				"Returns Decoder utilisation.",
+				"Returns Device utilisation.",
 				params.Params,
 				false,
 			),
 			handler: handlers.WithJSONResponse(
 				handler.GetDeviceUtilisation,
+			),
+		},
+		"nvml.device.ecc.mode": {
+			metric: metric.New(
+				"Returns Device current and pending ECC mode.",
+				params.Params,
+				false,
+			),
+			handler: handlers.WithJSONResponse(
+				handler.GetECCMode,
 			),
 		},
 	}

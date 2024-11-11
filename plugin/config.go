@@ -24,19 +24,10 @@ import (
 	"golang.zabbix.com/sdk/plugin"
 )
 
-// type session struct {
-// 	Username string `conf:"optional"`
-// 	Password string `conf:"optional"`
-// }
-
 type pluginConfig struct {
 	plugin.SystemOptions `conf:"optional,name=System"`
 	// Timeout.
 	Timeout int `conf:"optional,range=1:30"`
-	// // Sessions stores pre-defined named sets of connections settings.
-	// Sessions map[string]session `conf:"optional"`
-	// // Default stores default connection parameter values from configuration file.
-	// Default session `conf:"optional"`
 }
 
 // Configure implements the Configurator interface.

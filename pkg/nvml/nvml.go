@@ -4,29 +4,33 @@ package nvml
 //
 //nolint:interfacebloat
 type Runner interface {
-	InitNVML() error
+	// InitNVML initializes the NVML library using the older NVML interface.
+	Init() error
+	// InitNVMLv2 initializes the NVML library using the NVML v2 interface.
+	InitV2() error
 
-	InitNVMLv2() error
-	// Initialize NVML and any necessary resources
+	// GetDeviceCount retrieves the number of NVIDIA devices using the standard NVML interface.
 	GetDeviceCount() (uint, error)
 
-	// Initialize NVML and any necessary resources
+	// GetDeviceCountV2 retrieves the number of NVIDIA devices using the NVML v2 interface.
 	GetDeviceCountV2() (uint, error)
 
-	// Get a device by index
+	// GetDeviceByIndexV2 retrieves a handle to an NVIDIA device by its index using the NVML v2 interface.
 	GetDeviceByIndexV2(index uint) (*NVMLDevice, error)
 
+	// GetDeviceByUUID retrieves a handle to an NVIDIA device by its UUID.
 	GetDeviceByUUID(uuid string) (*NVMLDevice, error)
 
-	// Get NVML version
+	// GetNVMLVersion retrieves the version of the NVML library currently in use.
 	GetNVMLVersion() (string, error)
 
-	// Get Driver version
+	// GetDriverVersion retrieves the version of the NVIDIA driver currently in use.
 	GetDriverVersion() (string, error)
 
 	// Shutdown NVML and clean up resources
 	ShutdownNVML() error
 
+	// Close releases the resources associated with the loaded library in the Runner.
 	Close() error
 }
 
@@ -34,57 +38,95 @@ type Runner interface {
 //
 //nolint:interfacebloat
 type Device interface {
-	// Get the temperature of the device.
+	// GetTemperature retrieves the temperature of the NVIDIA device using the default sensor.
 	GetTemperature() (int, error)
 
-	// Get the memory information for the device.
+	// GetMemoryInfo retrieves memory information for the NVIDIA device.
 	GetMemoryInfo() (*MemoryInfo, error)
 
+	// GetBAR1MemoryInfo retrieves BAR1 memory information for the NVIDIA device.
 	GetBAR1MemoryInfo() (*MemoryInfo, error)
 
-	// Get the memory information for the device.
+	// GetMemoryInfoV2 retrieves detailed memory information for the NVIDIA device using the NVML v2 interface.
 	GetMemoryInfoV2() (*MemoryInfoV2, error)
 
-	// Get the fan speed of the device.
+	// GetFanSpeed retrieves the current fan speed of the NVIDIA device as a percentage of its maximum speed.
 	GetFanSpeed() (uint, error)
 
-	// Get PCIe throughput (TX or RX).
-	GetPcieThroughput(metricType PcieMetricType) (uint, error)
+	// GetPCIeThroughput retrieves the PCIe throughput for the NVIDIA device, based on the specified metric type.
+	GetPCIeThroughput(metricType PcieMetricType) (uint, error)
 
-	// GetUtilizationRates returns the GPU and memory utilization in that order (GPU, Memory).
+	// GetUtilizationRates retrieves the GPU and memory utilization rates for the device.
+	// The GPU utilization represents the percentage of time over the past sampling period
+	// that the GPU was actively processing, while the memory utilization indicates the
+	// percentage of time the memory was being accessed.
+	//
+	// Returns:
+	//   - gpuUtilization (uint): The GPU utilization rate as a percentage (0-100).
+	//   - memoryUtilization (uint): The memory utilization rate as a percentage (0-100).
+	//   - error: An error object if there is a failure in verifying the NVML symbol existence
+	//     or in retrieving the utilization rates from NVML.
 	GetUtilizationRates() (uint, uint, error)
 
-	// Get the UUID of the device.
+	// GetUUID retrieves the UUID of the NVIDIA device.
 	GetUUID() (string, error)
 
-	// Get the name of the device.
+	// GetName retrieves the name of the NVIDIA device.
 	GetName() (string, error)
 
-	// Get the serial number of the device.
+	// GetSerial retrieves the serial number of the NVIDIA device.
 	GetSerial() (string, error)
 
+	// GetPowerUsage retrieves the power usage of the NVIDIA device in milliwatts.
 	GetPowerUsage() (uint, error)
 
+	// GetPerformanceState retrieves the performance state (P-state) of the NVIDIA device.
 	GetPerformanceState() (uint, error)
 
+	// GetClockInfo retrieves the clock rate for the specified clock type of the NVIDIA device.
 	GetClockInfo(clockType ClockType) (uint, error)
 
+	// GetPowerManagementLimit retrieves the power management limit of the NVIDIA device in milliwatts.
 	GetPowerManagementLimit() (uint, error)
 
 	GetTotalEnergyConsumption() (uint64, error)
 
+	// GetEncoderStats retrieves statistics related to the encoder activity on the device.
+	// It returns the following statistics:
+	//   - sessionCount: the number of active encoder sessions.
+	//   - averageFps: the average frames per second across all active encoder sessions.
+	//   - averageLatency: the average latency (in milliseconds) across all active encoder sessions.
 	GetEncoderStats() (uint, uint, uint, error)
 
+	// GetEncoderUtilization retrieves the encoder utilization statistics for the device.
+	// It returns the following values:
+	//   - utilization: the percentage of time over the past sampling period during which the encoder was active.
+	//   - samplingPeriodUs: the sampling period duration in microseconds,
+	//     indicating how long the utilization metric was measured.
 	GetEncoderUtilization() (uint, uint, error)
 
+	// GetDecoderUtilization retrieves the decoder utilization statistics for the device.
+	// It returns the following values:
+	//   - utilization: the percentage of time over the past sampling period during which the decoder was active.
+	//   - samplingPeriodUs: the sampling period duration in microseconds, indicating how long the utilization
+	//     metric was measured.
 	GetDecoderUtilization() (uint, uint, error)
 
+	// GetMemoryErrorCounter retrieves the ECC memory error count for the specified error type,
+	// memory location, and counter type.
 	GetMemoryErrorCounter(
 		errorType MemoryErrorType,
 		memoryLocation MemoryLocation,
 		counterType EccCounterType,
 	) (uint64, error)
 
+	// GetEccMode retrieves the current and pending ECC (Error Correction Code) modes for the device.
+	// ECC mode indicates whether error correction is enabled or disabled on the device.
+	//
+	// Returns:
+	//   - `currentEnabled` (bool): `true` if ECC is currently enabled, `false` if disabled.
+	//   - `pendingEnabled` (bool): `true` if ECC will be enabled on the next reboot, `false` if it will be disabled.
+	//   - `error` (error): An error if the function fails to retrieve the ECC mode, otherwise `nil`.
 	GetEccMode() (bool, bool, error)
 }
 

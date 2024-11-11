@@ -58,7 +58,7 @@ func NewNVMLRunner() (*NVMLRunner, error) {
 }
 
 // InitNVML initializes the NVML library using the older NVML interface.
-func (runner *NVMLRunner) InitNVML() error {
+func (runner *NVMLRunner) Init() error {
 	err := runner.symbolExists("nvmlInit")
 	if err != nil {
 		return errs.Wrap(err, "failed to verify existence of NVML symbol")
@@ -74,7 +74,7 @@ func (runner *NVMLRunner) InitNVML() error {
 }
 
 // InitNVMLv2 initializes the NVML library using the NVML v2 interface.
-func (runner *NVMLRunner) InitNVMLv2() error {
+func (runner *NVMLRunner) InitV2() error {
 	err := runner.symbolExists("nvmlInit_v2")
 	if err != nil {
 		return errs.Wrap(err, "failed to verify existence of NVML symbol")
@@ -400,8 +400,8 @@ func (device *NVMLDevice) GetMemoryInfo() (*MemoryInfo, error) {
 	return memoryInfo, nil
 }
 
-// GetPcieThroughput retrieves the PCIe throughput for the NVIDIA device, based on the specified metric type.
-func (device *NVMLDevice) GetPcieThroughput(metricType PcieMetricType) (uint, error) {
+// GetPCIeThroughput retrieves the PCIe throughput for the NVIDIA device, based on the specified metric type.
+func (device *NVMLDevice) GetPCIeThroughput(metricType PcieMetricType) (uint, error) {
 	err := device.runner.symbolExists("nvmlDeviceGetPcieThroughput")
 	if err != nil {
 		return 0, errs.Wrap(err, "failed to verify existence of NVML symbol")

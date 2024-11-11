@@ -29,7 +29,7 @@ type MockDevice struct {
 	WantedErr      error
 }
 
-func (m *MockRunner) InitNVML() error {
+func (m *MockRunner) Init() error {
 	if m.WantedErr != nil {
 		return m.WantedErr
 	}
@@ -42,7 +42,7 @@ func (m *MockRunner) InitNVML() error {
 	return nil
 }
 
-func (m *MockRunner) InitNVMLv2() error {
+func (m *MockRunner) InitV2() error {
 	if m.WantedErr != nil {
 		return m.WantedErr
 	}
