@@ -54,11 +54,49 @@ var (
 	_ HandlerFunc = (*Handler)(nil).GetSMFrequency
 )
 
+// HandlerFunc describes the signature all metric handler functions must have.
+type HandlerFunc func(
+	ctx context.Context,
+	metricParams map[string]string,
+	extraParams ...string,
+) (any, error)
+
 // Handler hold client and syscall implementation for request functions.
 type Handler struct {
 	nvmlRunner     nvml.Runner
 	deviceCacheMux *sync.Mutex
 	deviceCache    map[string]*nvml.NVMLDevice
+}
+
+type DiscoveryDevice struct {
+	UUID string `json:"device_uuid"`
+	Name string `json:"device_name"`
+}
+
+type EccErrors struct {
+	Corrected   uint64 `json:"corrected"`
+	Uncorrected uint64 `json:"uncorrected"`
+}
+
+type EncoderStats struct {
+	SessionCount uint `json:"session_count"`
+	FPS          uint `json:"average_fps"`
+	Latency      uint `json:"average_latency_ms"`
+}
+
+type PcieUtil struct {
+	Transmit uint `json:"tx_rate_kb_s"`
+	Receive  uint `json:"rx_rate_kb_s"`
+}
+
+type UtilisationRates struct {
+	GPU    uint `json:"device"`
+	Memory uint `json:"memory"`
+}
+
+type EccMode struct {
+	Currect bool `json:"current"`
+	Pending bool `json:"pending"`
 }
 
 // New creates a new handler with initialized clients for system and tcp calls.
@@ -69,13 +107,6 @@ func New(nvmlRunner nvml.Runner) *Handler {
 		deviceCache:    make(map[string]*nvml.NVMLDevice),
 	}
 }
-
-// HandlerFunc describes the signature all metric handler functions must have.
-type HandlerFunc func(
-	ctx context.Context,
-	metricParams map[string]string,
-	extraParams ...string,
-) (any, error)
 
 func (h *Handler) GetDeviceByUUID(uuid string) (nvml.Device, error) {
 	h.deviceCacheMux.Lock()
@@ -112,11 +143,6 @@ func (h *Handler) GetDriverVersion(_ context.Context, _ map[string]string, _ ...
 	}
 
 	return version, nil
-}
-
-type DiscoveryDevice struct {
-	UUID string `json:"device_uuid"`
-	Name string `json:"device_name"`
 }
 
 func (h *Handler) DeviceDiscovery(_ context.Context, _ map[string]string, _ ...string) (any, error) {
@@ -341,11 +367,6 @@ func (h *Handler) GetFBMemoryInfo(_ context.Context, metricParams map[string]str
 	return memoryInfo, nil
 }
 
-type EccErrors struct {
-	Corrected   uint64 `json:"corrected"`
-	Uncorrected uint64 `json:"uncorrected"`
-}
-
 func (h *Handler) GetMemoryErrors(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
@@ -440,11 +461,6 @@ func WithJSONResponse(handler HandlerFunc) HandlerFunc {
 	}
 }
 
-type PcieUtil struct {
-	Transmit uint `json:"tx_rate_kb_s"`
-	Receive  uint `json:"rx_rate_kb_s"`
-}
-
 func (h *Handler) GetPCIeThroughput(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
@@ -472,12 +488,6 @@ func (h *Handler) GetPCIeThroughput(_ context.Context, metricParams map[string]s
 	}
 
 	return util, nil
-}
-
-type EncoderStats struct {
-	SessionCount uint `json:"session_count"`
-	FPS          uint `json:"average_fps"`
-	Latency      uint `json:"average_latency_ms"`
 }
 
 func (h *Handler) GetEncoderStats(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
@@ -619,11 +629,6 @@ func (h *Handler) GetDecoderUtilisation(_ context.Context, metricParams map[stri
 	return utilisation, nil
 }
 
-type UtilisationRates struct {
-	GPU    uint `json:"device"`
-	Memory uint `json:"memory"`
-}
-
 func (h *Handler) GetDeviceUtilisation(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
@@ -646,11 +651,6 @@ func (h *Handler) GetDeviceUtilisation(_ context.Context, metricParams map[strin
 	}
 
 	return util, nil
-}
-
-type EccMode struct {
-	Currect bool `json:"current"`
-	Pending bool `json:"pending"`
 }
 
 func (h *Handler) GetECCMode(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {

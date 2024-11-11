@@ -21,7 +21,7 @@ package params
 import "golang.zabbix.com/sdk/metric"
 
 const (
-	// PasswordParameterName password parameter name.
+	// DeviceUUIDParamName device uuid parameter name.
 	DeviceUUIDParamName = "DeviceUUID"
 )
 
@@ -30,6 +30,6 @@ var (
 	// Params groups all base parameters common for all connections.
 	Params = []*metric.Param{DeviceUUID}
 
-	// Password is an example parameter.
+	// DeviceUUID is device uuid parameter.
 	DeviceUUID = metric.NewConnParam(DeviceUUIDParamName, "Example parameter mimics a password.").WithDefault("")
 )

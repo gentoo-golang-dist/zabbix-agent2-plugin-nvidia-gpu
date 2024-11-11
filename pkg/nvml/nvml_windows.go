@@ -597,7 +597,7 @@ func (runner *NVMLRunner) getProc(procName string) (*windows.Proc, error) {
 
 	proc, err := runner.dll.FindProc(procName)
 	if err != nil {
-		return nil, errs.Wrap(ErrFunctionNotFound, "failed to get procedure %q", procName)
+		return nil, errs.Wrapf(ErrFunctionNotFound, "failed to get procedure %q", procName)
 	}
 
 	runner.procList[procName] = proc
