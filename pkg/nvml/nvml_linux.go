@@ -674,18 +674,6 @@ func (runner *NVMLRunner) Close() error {
 	return nil
 }
 
-func loadLibrary() (unsafe.Pointer, error) {
-	libName := C.CString("libnvidia-ml.so")
-	defer C.free(unsafe.Pointer(libName)) //nolint:nlreturn
-
-	handle := C.dlopen(libName, C.RTLD_LAZY|C.RTLD_GLOBAL)
-	if handle == nil {
-		return nil, ErrLibraryNotFound
-	}
-
-	return handle, nil
-}
-
 func (runner *NVMLRunner) symbolExists(funcName string) error {
 	runner.procListMux.Lock()
 	defer runner.procListMux.Unlock()
@@ -700,10 +688,22 @@ func (runner *NVMLRunner) symbolExists(funcName string) error {
 
 	initPtr := C.dlsym(runner.dynamicLib, initSymbol) //nolint:nlreturn
 	if initPtr == nil {
-		return errs.Wrap(ErrFunctionNotFound, "error getting procedure: "+funcName)
+		return errs.Wrapf(ErrFunctionNotFound, "failed to get procedure %q", funcName)
 	}
 
 	runner.procList[funcName] = struct{}{}
 
 	return nil
+}
+
+func loadLibrary() (unsafe.Pointer, error) {
+	libName := C.CString("libnvidia-ml.so")
+	defer C.free(unsafe.Pointer(libName)) //nolint:nlreturn
+
+	handle := C.dlopen(libName, C.RTLD_LAZY|C.RTLD_GLOBAL)
+	if handle == nil {
+		return nil, ErrLibraryNotFound
+	}
+
+	return handle, nil
 }
