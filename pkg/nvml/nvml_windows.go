@@ -1,7 +1,7 @@
 package nvml
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/nvml-sdk/nvml/include
+#cgo CFLAGS: -I${SRCDIR}/nvml-sdk/include
 #cgo CFLAGS: -DNVML_NO_UNVERSIONED_FUNC_DEFS=1
 
 #include "nvml.h"
@@ -60,6 +60,26 @@ func (runner *NVMLRunner) getProc(procName string) (*windows.Proc, error) {
 	return proc, nil
 }
 
+func (runner *NVMLRunner) callProc(procName string, args ...uintptr) error {
+	proc, err := runner.getProc(procName)
+	if err != nil {
+		return errs.Wrap(err, "error getting procedure")
+	}
+
+	result, _, callErr := proc.Call(args...)
+	err = checkCallError(callErr)
+	if err != nil {
+		return errs.Wrap(err, "error making syscall")
+	}
+
+	err = mapNVMLResultToError(int(result))
+	if err != nil {
+		return errs.Wrap(err, "NVML returned error")
+	}
+
+	return nil
+}
+
 // NewNVMLRunner creates a new NVML Runner instance, loading the NVML library.
 func NewNVMLRunner() (*NVMLRunner, error) {
 	dll, err := windows.LoadDLL("nvml.dll")
@@ -76,45 +96,21 @@ func NewNVMLRunner() (*NVMLRunner, error) {
 	return runner, nil
 }
 
-// InitNVML initializes the NVML library using the older NVML interface.
+// Init initializes the NVML library using the older NVML interface.
 func (runner *NVMLRunner) Init() error {
-	proc, err := runner.getProc("nvmlInit")
+	err := runner.callProc("nvmlInit")
 	if err != nil {
 		return errs.Wrap(err, "error getting procedure")
-	}
-
-	result, _, callErr := proc.Call()
-
-	err = checkCallError(callErr)
-	if err != nil {
-		return errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return errs.Wrap(err, "NVML returned error")
 	}
 
 	return nil
 }
 
-// InitNVMLv2 initializes the NVML library using the NVML v2 interface.
+// InitV2 initializes the NVML library using the NVML v2 interface.
 func (runner *NVMLRunner) InitV2() error {
-	proc, err := runner.getProc("nvmlInit_v2")
+	err := runner.callProc("nvmlInit_v2")
 	if err != nil {
 		return errs.Wrap(err, "error getting procedure")
-	}
-
-	result, _, callErr := proc.Call()
-
-	err = checkCallError(callErr)
-	if err != nil {
-		return errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return errs.Wrap(err, "NVML returned error")
 	}
 
 	return nil
@@ -143,26 +139,15 @@ func checkCallError(callErr error) error {
 
 // GetNVMLVersion retrieves the version of the NVML library currently in use.
 func (runner *NVMLRunner) GetNVMLVersion() (string, error) {
-	proc, err := runner.getProc("nvmlSystemGetNVMLVersion")
-	if err != nil {
-		return "", errs.Wrap(err, "error getting procedure")
-	}
 
 	var version [systemNVMLVersionBufferSize]byte
 
-	result, _, callErr := proc.Call(
+	err := runner.callProc("nvmlSystemGetNVMLVersion",
 		uintptr(unsafe.Pointer(&version[0])),
 		uintptr(systemNVMLVersionBufferSize),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return "", errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return "", errs.Wrap(err, "NVML returned error")
+		return "", errs.Wrap(err, "error getting procedure")
 	}
 
 	return windows.ByteSliceToString(version[:]), nil
@@ -170,26 +155,14 @@ func (runner *NVMLRunner) GetNVMLVersion() (string, error) {
 
 // GetDriverVersion retrieves the version of the NVIDIA driver currently in use.
 func (runner *NVMLRunner) GetDriverVersion() (string, error) {
-	proc, err := runner.getProc("nvmlSystemGetDriverVersion")
-	if err != nil {
-		return "", errs.Wrap(err, "error getting procedure")
-	}
-
 	var version [systemDriverVersionBufferSize]byte
 
-	result, _, callErr := proc.Call(
+	err := runner.callProc("nvmlSystemGetDriverVersion",
 		uintptr(unsafe.Pointer(&version[0])),
 		uintptr(systemDriverVersionBufferSize),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return "", errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return "", errs.Wrap(err, "NVML returned error")
+		return "", errs.Wrap(err, "error getting procedure")
 	}
 
 	return windows.ByteSliceToString(version[:]), nil
@@ -197,23 +170,12 @@ func (runner *NVMLRunner) GetDriverVersion() (string, error) {
 
 // GetDeviceCountV2 retrieves the number of NVIDIA devices using the NVML v2 interface.
 func (runner *NVMLRunner) GetDeviceCountV2() (uint, error) {
-	proc, err := runner.getProc("nvmlDeviceGetCount_v2")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var deviceCount C.uint
 
-	result, _, callErr := proc.Call(uintptr(unsafe.Pointer(&deviceCount)))
-
-	err = checkCallError(callErr)
+	err := runner.callProc("nvmlDeviceGetCount_v2", uintptr(unsafe.Pointer(&deviceCount)))
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(deviceCount), nil
@@ -221,23 +183,12 @@ func (runner *NVMLRunner) GetDeviceCountV2() (uint, error) {
 
 // GetDeviceCount retrieves the number of NVIDIA devices using the standard NVML interface.
 func (runner *NVMLRunner) GetDeviceCount() (uint, error) {
-	proc, err := runner.getProc("nvmlDeviceGetCount")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var deviceCount C.uint
 
-	result, _, callErr := proc.Call(uintptr(unsafe.Pointer(&deviceCount)))
-
-	err = checkCallError(callErr)
+	err := runner.callProc("nvmlDeviceGetCount", uintptr(unsafe.Pointer(&deviceCount)))
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(deviceCount), nil
@@ -245,26 +196,15 @@ func (runner *NVMLRunner) GetDeviceCount() (uint, error) {
 
 // GetDeviceByIndexV2 retrieves a handle to an NVIDIA device by its index using the NVML v2 interface.
 func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (*NVMLDevice, error) {
-	proc, err := runner.getProc("nvmlDeviceGetHandleByIndex_v2")
-	if err != nil {
-		return nil, errs.Wrap(err, "error getting procedure")
-	}
 
 	var deviceHandle uintptr
 
-	result, _, callErr := proc.Call(
+	err := runner.callProc("nvmlDeviceGetHandleByIndex_v2",
 		uintptr(index),
 		uintptr(unsafe.Pointer(&deviceHandle)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return nil, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return nil, errs.Wrap(err, "NVML returned error")
+		return nil, errs.Wrap(err, "error getting procedure")
 	}
 
 	device := &NVMLDevice{
@@ -277,10 +217,6 @@ func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (*NVMLDevice, error) {
 
 // GetDeviceByUUID retrieves a handle to an NVIDIA device by its UUID.
 func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (*NVMLDevice, error) {
-	proc, err := runner.getProc("nvmlDeviceGetHandleByUUID")
-	if err != nil {
-		return nil, errs.Wrap(err, "error getting procedure")
-	}
 
 	var deviceHandle uintptr
 
@@ -293,19 +229,12 @@ func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (*NVMLDevice, error) {
 		return nil, errs.New("uuid string too long")
 	}
 
-	result, _, callErr := proc.Call(
+	err = runner.callProc("nvmlDeviceGetHandleByUUID",
 		uintptr(unsafe.Pointer(&cUUID[0])),
 		uintptr(unsafe.Pointer(&deviceHandle)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return nil, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return nil, errs.Wrap(err, "NVML returned error")
+		return nil, errs.Wrap(err, "error getting procedure")
 	}
 
 	device := &NVMLDevice{
@@ -318,21 +247,9 @@ func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (*NVMLDevice, error) {
 
 // ShutdownNVML is a wrapper function to cleanly shut down NVML.
 func (runner *NVMLRunner) ShutdownNVML() error {
-	proc, err := runner.getProc("nvmlShutdown")
+	err := runner.callProc("nvmlShutdown")
 	if err != nil {
 		return errs.Wrap(err, "error getting procedure")
-	}
-
-	result, _, callErr := proc.Call()
-
-	err = checkCallError(callErr)
-	if err != nil {
-		return errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return errs.Wrap(err, "NVML returned error")
 	}
 
 	return nil
@@ -352,27 +269,16 @@ func (runner *NVMLRunner) Close() error {
 
 // GetTemperature retrieves the temperature of the NVIDIA device using the default sensor.
 func (device *NVMLDevice) GetTemperature() (int, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetTemperature")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var temperature C.uint
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetTemperature",
 		device.handle,
 		0,
 		uintptr(unsafe.Pointer(&temperature)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return int(temperature), nil
@@ -380,27 +286,16 @@ func (device *NVMLDevice) GetTemperature() (int, error) {
 
 // GetName retrieves the name of the NVIDIA device.
 func (device *NVMLDevice) GetName() (string, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetName")
-	if err != nil {
-		return "", errs.Wrap(err, "error getting procedure")
-	}
 
 	var name [deviceNameBufferSize]byte
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetName",
 		device.handle,
 		uintptr(unsafe.Pointer(&name[0])),
 		uintptr(deviceNameBufferSize),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return "", errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return "", errs.Wrap(err, "NVML returned error")
+		return "", errs.Wrap(err, "error getting procedure")
 	}
 
 	return windows.ByteSliceToString(name[:]), nil
@@ -408,30 +303,18 @@ func (device *NVMLDevice) GetName() (string, error) {
 
 // GetMemoryInfoV2 retrieves detailed memory information for the NVIDIA device using the NVML v2 interface.
 func (device *NVMLDevice) GetMemoryInfoV2() (*MemoryInfoV2, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetMemoryInfo_v2")
-	if err != nil {
-		return nil, errs.Wrap(err, "error getting procedure")
-	}
-
 	var nvmlMemInfo C.nvmlMemory_v2_t
 
 	// there is a macto in nvml.h called NVML_STRUCT_VERSION,
 	// it does not work for CGO, so doing manually.
 	nvmlMemInfo.version = C.uint(unsafe.Sizeof(nvmlMemInfo)) | (2 << 24)
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetMemoryInfo_v2",
 		device.handle,
 		uintptr(unsafe.Pointer(&nvmlMemInfo)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return nil, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "error getting procedure")
 	}
 
 	memInfo := &MemoryInfoV2{
@@ -446,26 +329,14 @@ func (device *NVMLDevice) GetMemoryInfoV2() (*MemoryInfoV2, error) {
 
 // GetMemoryInfo retrieves memory information for the NVIDIA device.
 func (device *NVMLDevice) GetMemoryInfo() (*MemoryInfo, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetMemoryInfo")
-	if err != nil {
-		return nil, errs.Wrap(err, "error getting procedure")
-	}
-
 	var memInfo C.nvmlMemory_t
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetMemoryInfo",
 		device.handle,
 		uintptr(unsafe.Pointer(&memInfo)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return nil, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "error getting procedure")
 	}
 
 	info := &MemoryInfo{
@@ -479,26 +350,15 @@ func (device *NVMLDevice) GetMemoryInfo() (*MemoryInfo, error) {
 
 // GetBAR1MemoryInfo retrieves BAR1 memory information for the NVIDIA device.
 func (device *NVMLDevice) GetBAR1MemoryInfo() (*MemoryInfo, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetBAR1MemoryInfo")
-	if err != nil {
-		return nil, errs.Wrap(err, "error getting procedure")
-	}
 
 	var memInfo C.nvmlBAR1Memory_t
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetBAR1MemoryInfo",
 		device.handle,
 		uintptr(unsafe.Pointer(&memInfo)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return nil, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return nil, errs.Wrap(err, "NVML returned error")
+		return nil, errs.Wrap(err, "error getting procedure")
 	}
 
 	info := &MemoryInfo{
@@ -512,26 +372,14 @@ func (device *NVMLDevice) GetBAR1MemoryInfo() (*MemoryInfo, error) {
 
 // GetFanSpeed retrieves the current fan speed of the NVIDIA device as a percentage of its maximum speed.
 func (device *NVMLDevice) GetFanSpeed() (uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetFanSpeed")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
-
 	var speed C.uint
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetFanSpeed",
 		device.handle,
 		uintptr(unsafe.Pointer(&speed)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(speed), nil
@@ -539,27 +387,15 @@ func (device *NVMLDevice) GetFanSpeed() (uint, error) {
 
 // GetPCIeThroughput retrieves the PCIe throughput for the NVIDIA device, based on the specified metric type.
 func (device *NVMLDevice) GetPCIeThroughput(metricType PcieMetricType) (uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetPcieThroughput")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
-
 	var throughput C.uint
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetPcieThroughput",
 		device.handle,
 		uintptr(metricType),
 		uintptr(unsafe.Pointer(&throughput)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(throughput), nil
@@ -567,27 +403,15 @@ func (device *NVMLDevice) GetPCIeThroughput(metricType PcieMetricType) (uint, er
 
 // GetUUID retrieves the UUID of the NVIDIA device.
 func (device *NVMLDevice) GetUUID() (string, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetUUID")
-	if err != nil {
-		return "", errs.Wrap(err, "error getting procedure")
-	}
-
 	var uuid [deviceUUIDBufferSize]byte
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetUUID",
 		device.handle,
 		uintptr(unsafe.Pointer(&uuid[0])),
 		uintptr(deviceUUIDBufferSize),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return "", errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return "", errs.Wrap(err, "NVML returned error")
+		return "", errs.Wrap(err, "error getting procedure")
 	}
 
 	return windows.ByteSliceToString(uuid[:]), nil
@@ -595,27 +419,15 @@ func (device *NVMLDevice) GetUUID() (string, error) {
 
 // GetSerial retrieves the serial number of the NVIDIA device.
 func (device *NVMLDevice) GetSerial() (string, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetSerial")
-	if err != nil {
-		return "", errs.Wrap(err, "error getting procedure")
-	}
-
 	var serial [deviceSerialBufferSize]byte
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetSerial",
 		device.handle,
 		uintptr(unsafe.Pointer(&serial[0])),
 		uintptr(deviceSerialBufferSize),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return "", errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return "", errs.Wrap(err, "NVML returned error")
+		return "", errs.Wrap(err, "error getting procedure")
 	}
 
 	return windows.ByteSliceToString(serial[:]), nil
@@ -627,30 +439,18 @@ func (device *NVMLDevice) GetSerial() (string, error) {
 //   - samplingPeriodUs: the sampling period duration in microseconds,
 //     indicating how long the utilization metric was measured.
 func (device *NVMLDevice) GetEncoderUtilization() (uint, uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetEncoderUtilization")
-	if err != nil {
-		return 0, 0, errs.Wrap(err, "error getting procedure")
-	}
-
 	var (
 		utilization      C.uint
 		samplingPeriodUs C.uint
 	)
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetEncoderUtilization",
 		device.handle,
 		uintptr(unsafe.Pointer(&utilization)),
 		uintptr(unsafe.Pointer(&samplingPeriodUs)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, 0, errs.Wrap(err, "NVML returned error")
+		return 0, 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(utilization), uint(samplingPeriodUs), nil
@@ -662,30 +462,18 @@ func (device *NVMLDevice) GetEncoderUtilization() (uint, uint, error) {
 //   - samplingPeriodUs: the sampling period duration in microseconds, indicating how long the utilization
 //     metric was measured.
 func (device *NVMLDevice) GetDecoderUtilization() (uint, uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetDecoderUtilization")
-	if err != nil {
-		return 0, 0, errs.Wrap(err, "error getting procedure")
-	}
-
 	var (
 		utilization      C.uint
 		samplingPeriodUs C.uint
 	)
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetDecoderUtilization",
 		device.handle,
 		uintptr(unsafe.Pointer(&utilization)),
 		uintptr(unsafe.Pointer(&samplingPeriodUs)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, 0, errs.Wrap(err, "NVML returned error")
+		return 0, 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(utilization), uint(samplingPeriodUs), nil
@@ -697,29 +485,18 @@ func (device *NVMLDevice) GetMemoryErrorCounter(
 	errorType MemoryErrorType,
 	memoryLocation MemoryLocation,
 	counterType EccCounterType) (uint64, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetMemoryErrorCounter")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var errorCount C.ulonglong
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetMemoryErrorCounter",
 		device.handle,
 		uintptr(errorType),
 		uintptr(counterType),
 		uintptr(memoryLocation),
 		uintptr(unsafe.Pointer(&errorCount)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint64(errorCount), nil
@@ -727,26 +504,15 @@ func (device *NVMLDevice) GetMemoryErrorCounter(
 
 // GetTotalEnergyConsumption retrieves the total energy consumption of the NVIDIA device in millijoules.
 func (device *NVMLDevice) GetTotalEnergyConsumption() (uint64, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetTotalEnergyConsumption")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var energy C.ulonglong
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetTotalEnergyConsumption",
 		device.handle,
 		uintptr(unsafe.Pointer(&energy)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint64(energy), nil
@@ -754,26 +520,15 @@ func (device *NVMLDevice) GetTotalEnergyConsumption() (uint64, error) {
 
 // GetPerformanceState retrieves the performance state (P-state) of the NVIDIA device.
 func (device *NVMLDevice) GetPerformanceState() (uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetPerformanceState")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var perfState C.uint
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetPerformanceState",
 		device.handle,
 		uintptr(unsafe.Pointer(&perfState)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(perfState), nil
@@ -781,27 +536,16 @@ func (device *NVMLDevice) GetPerformanceState() (uint, error) {
 
 // GetClockInfo retrieves the clock rate for the specified clock type of the NVIDIA device.
 func (device *NVMLDevice) GetClockInfo(clockType ClockType) (uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetClockInfo")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var clockRate C.uint
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetClockInfo",
 		device.handle,
 		uintptr(clockType),
 		uintptr(unsafe.Pointer(&clockRate)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(clockRate), nil
@@ -809,26 +553,15 @@ func (device *NVMLDevice) GetClockInfo(clockType ClockType) (uint, error) {
 
 // GetPowerUsage retrieves the power usage of the NVIDIA device in milliwatts.
 func (device *NVMLDevice) GetPowerUsage() (uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetPowerUsage")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var power C.uint
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetPowerUsage",
 		device.handle,
 		uintptr(unsafe.Pointer(&power)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(power), nil
@@ -840,10 +573,6 @@ func (device *NVMLDevice) GetPowerUsage() (uint, error) {
 //   - averageFps: the average frames per second across all active encoder sessions.
 //   - averageLatency: the average latency (in milliseconds) across all active encoder sessions.
 func (device *NVMLDevice) GetEncoderStats() (uint, uint, uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetPowerUsage")
-	if err != nil {
-		return 0, 0, 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var (
 		sessionCount   C.uint
@@ -851,21 +580,14 @@ func (device *NVMLDevice) GetEncoderStats() (uint, uint, uint, error) {
 		averageLatency C.uint
 	)
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetPowerUsage",
 		device.handle,
 		uintptr(unsafe.Pointer(&sessionCount)),
 		uintptr(unsafe.Pointer(&averageFps)),
 		uintptr(unsafe.Pointer(&averageLatency)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, 0, 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, 0, 0, errs.Wrap(err, "NVML returned error")
+		return 0, 0, 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(sessionCount), uint(averageFps), uint(averageLatency), nil
@@ -873,26 +595,15 @@ func (device *NVMLDevice) GetEncoderStats() (uint, uint, uint, error) {
 
 // GetPowerManagementLimit retrieves the power management limit of the NVIDIA device in milliwatts.
 func (device *NVMLDevice) GetPowerManagementLimit() (uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetPowerManagementLimit")
-	if err != nil {
-		return 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var powerLimit C.uint
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetPowerManagementLimit",
 		device.handle,
 		uintptr(unsafe.Pointer(&powerLimit)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, errs.Wrap(err, "NVML returned error")
+		return 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(powerLimit), nil
@@ -906,34 +617,22 @@ func (device *NVMLDevice) GetPowerManagementLimit() (uint, error) {
 //   - `pendingEnabled` (bool): `true` if ECC will be enabled on the next reboot, `false` if it will be disabled.
 //   - `error` (error): An error if the function fails to retrieve the ECC mode, otherwise `nil`.
 func (device *NVMLDevice) GetEccMode() (bool, bool, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetEccMode")
-	if err != nil {
-		return false, false, errs.Wrap(err, "error getting procedure")
-	}
-
 	var (
 		currentMode C.uint
 		pendingMode C.uint
 	)
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetEccMode",
 		device.handle,
 		uintptr(unsafe.Pointer(&currentMode)),
 		uintptr(unsafe.Pointer(&pendingMode)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return false, false, errs.Wrap(err, "error making syscall")
+		return false, false, errs.Wrap(err, "error getting procedure")
 	}
 
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return false, false, errs.Wrap(err, "NVML returned error")
-	}
-
-	currentEnabled := currentMode == 1
-	pendingEnabled := pendingMode == 1
+	currentEnabled := currentMode == C.NVML_FEATURE_ENABLED
+	pendingEnabled := pendingMode == C.NVML_FEATURE_ENABLED
 
 	return currentEnabled, pendingEnabled, nil
 }
@@ -949,26 +648,15 @@ func (device *NVMLDevice) GetEccMode() (bool, bool, error) {
 //   - error: An error object if there is a failure in verifying the NVML symbol existence
 //     or in retrieving the utilization rates from NVML.
 func (device *NVMLDevice) GetUtilizationRates() (uint, uint, error) {
-	proc, err := device.runner.getProc("nvmlDeviceGetUtilizationRates")
-	if err != nil {
-		return 0, 0, errs.Wrap(err, "error getting procedure")
-	}
 
 	var util C.nvmlUtilization_t
 
-	result, _, callErr := proc.Call(
+	err := device.runner.callProc("nvmlDeviceGetUtilizationRates",
 		device.handle,
 		uintptr(unsafe.Pointer(&util)),
 	)
-
-	err = checkCallError(callErr)
 	if err != nil {
-		return 0, 0, errs.Wrap(err, "error making syscall")
-	}
-
-	err = mapNVMLResultToError(int(result))
-	if err != nil {
-		return 0, 0, errs.Wrap(err, "NVML returned error")
+		return 0, 0, errs.Wrap(err, "error getting procedure")
 	}
 
 	return uint(util.gpu), uint(util.memory), nil

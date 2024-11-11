@@ -1,7 +1,7 @@
 package nvml
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/nvml-sdk/nvml/include
+#cgo CFLAGS: -I${SRCDIR}/nvml-sdk/include
 #cgo CFLAGS: -DNVML_NO_UNVERSIONED_FUNC_DEFS=1
 
 #cgo linux LDFLAGS: -Wl,--export-dynamic -Wl,--unresolved-symbols=ignore-in-object-files
