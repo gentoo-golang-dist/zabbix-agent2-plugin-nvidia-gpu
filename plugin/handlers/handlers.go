@@ -65,7 +65,7 @@ type HandlerFunc func(
 type Handler struct {
 	nvmlRunner     nvml.Runner
 	deviceCacheMux *sync.Mutex
-	deviceCache    map[string]*nvml.NVMLDevice
+	deviceCache    map[string]nvml.Device
 }
 
 type DiscoveryDevice struct {
@@ -104,11 +104,11 @@ func New(nvmlRunner nvml.Runner) *Handler {
 	return &Handler{
 		nvmlRunner:     nvmlRunner,
 		deviceCacheMux: &sync.Mutex{},
-		deviceCache:    make(map[string]*nvml.NVMLDevice),
+		deviceCache:    make(map[string]nvml.Device),
 	}
 }
 
-func (h *Handler) GetDeviceByUUID(uuid string) (nvml.Device, error) {
+func (h *Handler) getDeviceByUUID(uuid string) (nvml.Device, error) {
 	h.deviceCacheMux.Lock()
 	defer h.deviceCacheMux.Unlock()
 
@@ -119,7 +119,7 @@ func (h *Handler) GetDeviceByUUID(uuid string) (nvml.Device, error) {
 
 	device, err := h.nvmlRunner.GetDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	h.deviceCache[uuid] = device
@@ -152,8 +152,9 @@ func (h *Handler) DeviceDiscovery(_ context.Context, _ map[string]string, _ ...s
 	}
 
 	var discovered []DiscoveryDevice
-	deviceCache := make(map[string]*nvml.NVMLDevice)
+	deviceCache := make(map[string]nvml.Device)
 
+	// Should be done in parallel
 	for i := uint(0); i < deviceCount; i++ {
 		device, err := h.nvmlRunner.GetDeviceByIndexV2(i)
 		if err != nil {
@@ -199,12 +200,12 @@ func (h *Handler) GetDeviceCount(_ context.Context, _ map[string]string, _ ...st
 func (h *Handler) GetDeviceTemperature(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("Could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	temperature, err := device.GetTemperature()
@@ -218,12 +219,12 @@ func (h *Handler) GetDeviceTemperature(_ context.Context, metricParams map[strin
 func (h *Handler) GetDeviceSerial(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	serial, err := device.GetSerial()
@@ -237,12 +238,12 @@ func (h *Handler) GetDeviceSerial(_ context.Context, metricParams map[string]str
 func (h *Handler) GetDeviceFanSpeed(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	fanSpeed, err := device.GetFanSpeed()
@@ -256,12 +257,12 @@ func (h *Handler) GetDeviceFanSpeed(_ context.Context, metricParams map[string]s
 func (h *Handler) GetDevicePerfState(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	perfState, err := device.GetPerformanceState()
@@ -275,12 +276,12 @@ func (h *Handler) GetDevicePerfState(_ context.Context, metricParams map[string]
 func (h *Handler) GetDeviceEnergyConsumption(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	energyCons, err := device.GetTotalEnergyConsumption()
@@ -294,12 +295,12 @@ func (h *Handler) GetDeviceEnergyConsumption(_ context.Context, metricParams map
 func (h *Handler) GetDevicePowerLimit(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	powerLimit, err := device.GetPowerManagementLimit()
@@ -313,12 +314,12 @@ func (h *Handler) GetDevicePowerLimit(_ context.Context, metricParams map[string
 func (h *Handler) GetDevicePowerUsage(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	powerUsage, err := device.GetPowerUsage()
@@ -332,12 +333,12 @@ func (h *Handler) GetDevicePowerUsage(_ context.Context, metricParams map[string
 func (h *Handler) GetBAR1MemoryInfo(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	memoryInfo, err := device.GetBAR1MemoryInfo()
@@ -351,12 +352,12 @@ func (h *Handler) GetBAR1MemoryInfo(_ context.Context, metricParams map[string]s
 func (h *Handler) GetFBMemoryInfo(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	memoryInfo, err := device.GetMemoryInfoV2()
@@ -370,12 +371,12 @@ func (h *Handler) GetFBMemoryInfo(_ context.Context, metricParams map[string]str
 func (h *Handler) GetMemoryErrors(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	corrected, err := device.GetMemoryErrorCounter(
@@ -407,12 +408,12 @@ func (h *Handler) GetMemoryErrors(_ context.Context, metricParams map[string]str
 func (h *Handler) GetRegistryErrors(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	corrected, err := device.GetMemoryErrorCounter(
@@ -464,12 +465,12 @@ func WithJSONResponse(handler HandlerFunc) HandlerFunc {
 func (h *Handler) GetPCIeThroughput(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	rx, err := device.GetPCIeThroughput(nvml.RX)
@@ -493,12 +494,12 @@ func (h *Handler) GetPCIeThroughput(_ context.Context, metricParams map[string]s
 func (h *Handler) GetEncoderStats(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	sessions, fps, latency, err := device.GetEncoderStats()
@@ -518,12 +519,12 @@ func (h *Handler) GetEncoderStats(_ context.Context, metricParams map[string]str
 func (h *Handler) GetVideoFrequency(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("Could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	clock, err := device.GetClockInfo(nvml.Video)
@@ -537,12 +538,12 @@ func (h *Handler) GetVideoFrequency(_ context.Context, metricParams map[string]s
 func (h *Handler) GetGraphicsFrequency(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("Could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	clock, err := device.GetClockInfo(nvml.Graphics)
@@ -556,12 +557,12 @@ func (h *Handler) GetGraphicsFrequency(_ context.Context, metricParams map[strin
 func (h *Handler) GetSMFrequency(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("Could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	clock, err := device.GetClockInfo(nvml.SM)
@@ -575,12 +576,12 @@ func (h *Handler) GetSMFrequency(_ context.Context, metricParams map[string]stri
 func (h *Handler) GetMemoryFrequency(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("Could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	clock, err := device.GetClockInfo(nvml.Memory)
@@ -594,12 +595,12 @@ func (h *Handler) GetMemoryFrequency(_ context.Context, metricParams map[string]
 func (h *Handler) GetEncoderUtilisation(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("Could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	utilisation, _, err := device.GetEncoderUtilization()
@@ -613,12 +614,12 @@ func (h *Handler) GetEncoderUtilisation(_ context.Context, metricParams map[stri
 func (h *Handler) GetDecoderUtilisation(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("Could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	utilisation, _, err := device.GetDecoderUtilization()
@@ -632,12 +633,12 @@ func (h *Handler) GetDecoderUtilisation(_ context.Context, metricParams map[stri
 func (h *Handler) GetDeviceUtilisation(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("Could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "error getting device by uuid")
+		return nil, errs.Wrap(err, "failed to get device by uuid")
 	}
 
 	gpu, memory, err := device.GetUtilizationRates()
@@ -656,10 +657,10 @@ func (h *Handler) GetDeviceUtilisation(_ context.Context, metricParams map[strin
 func (h *Handler) GetECCMode(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
-		return nil, errs.New("Could not find param for uuid")
+		return nil, errs.New("failed to find param for uuid")
 	}
 
-	device, err := h.GetDeviceByUUID(uuid)
+	device, err := h.getDeviceByUUID(uuid)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed getting device by uuid")
 	}

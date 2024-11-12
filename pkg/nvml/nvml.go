@@ -16,10 +16,10 @@ type Runner interface {
 	GetDeviceCountV2() (uint, error)
 
 	// GetDeviceByIndexV2 retrieves a handle to an NVIDIA device by its index using the NVML v2 interface.
-	GetDeviceByIndexV2(index uint) (*NVMLDevice, error)
+	GetDeviceByIndexV2(index uint) (Device, error)
 
 	// GetDeviceByUUID retrieves a handle to an NVIDIA device by its UUID.
-	GetDeviceByUUID(uuid string) (*NVMLDevice, error)
+	GetDeviceByUUID(uuid string) (Device, error)
 
 	// GetNVMLVersion retrieves the version of the NVML library currently in use.
 	GetNVMLVersion() (string, error)

@@ -70,7 +70,7 @@ func Launch() error {
 
 	err = p.registerMetrics()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to register metrics")
 	}
 
 	h, err := container.NewHandler(Name)
@@ -87,7 +87,7 @@ func Launch() error {
 
 	err = p.nvmlRunner.Close()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to close nvml")
 	}
 
 	return nil
@@ -99,7 +99,7 @@ func (p *nvmlPlugin) Start() {
 
 	err := initNVML(p.nvmlRunner, p.Logger)
 	if err != nil {
-		p.Logger.Errf("error initializing NVML library: %v", err)
+		p.Logger.Errf("failed to initialise NVML library: %v", err)
 		panic(err)
 	}
 }
@@ -132,7 +132,7 @@ func initNVML(runner nvml.Runner, loger log.Logger) error {
 }
 
 // Export collects all the metrics.
-func (p *nvmlPlugin) Export(key string, rawParams []string, _ plugin.ContextProvider) (any, error) {
+func (p *nvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.ContextProvider) (any, error) {
 	m, ok := p.metrics[key]
 	if !ok {
 		return nil, errs.Wrapf(zbxerr.ErrorUnsupportedMetric, "unknown metric %q", key)
@@ -148,9 +148,13 @@ func (p *nvmlPlugin) Export(key string, rawParams []string, _ plugin.ContextProv
 		return nil, errs.Wrap(err, "failed to set default params")
 	}
 
+	timeout := time.Second * time.Duration(p.config.Timeout)
+	if timeout < time.Second*time.Duration(pluginCtx.Timeout()) {
+		timeout = time.Second * time.Duration(pluginCtx.Timeout())
+	}
+
 	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		time.Duration(p.config.Timeout)*time.Second,
+		context.Background(), timeout,
 	)
 	defer cancel()
 

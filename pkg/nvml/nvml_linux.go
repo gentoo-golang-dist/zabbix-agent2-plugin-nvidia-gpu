@@ -162,7 +162,7 @@ func (runner *NVMLRunner) GetDeviceCount() (uint, error) {
 }
 
 // GetDeviceByIndexV2 retrieves a handle to an NVIDIA device by its index using the NVML v2 interface.
-func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (*NVMLDevice, error) {
+func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (Device, error) {
 	err := runner.symbolExists("nvmlDeviceGetHandleByIndex_v2")
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to verify existence of NVML symbol")
@@ -186,7 +186,7 @@ func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (*NVMLDevice, error) {
 }
 
 // GetDeviceByUUID retrieves a handle to an NVIDIA device by its UUID.
-func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (*NVMLDevice, error) {
+func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (Device, error) {
 	err := runner.symbolExists("nvmlDeviceGetHandleByUUID")
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to verify existence of NVML symbol")

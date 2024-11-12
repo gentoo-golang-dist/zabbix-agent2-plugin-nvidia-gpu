@@ -20,6 +20,7 @@ package handlers
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -106,35 +107,37 @@ func TestWithJSONResponse(t *testing.T) {
 	}
 }
 
-func Test_getAll(t *testing.T) {
+func TestHandler_DriverVersion(t *testing.T) {
 	t.Parallel()
 
-	type args struct {
-		env []string
+	type expect struct {
+		expectations []*nvmlmock.Expectation
 	}
 
 	tests := []struct {
 		name    string
-		args    args
-		want    map[string]string
+		expect  expect
+		want    any
 		wantErr bool
 	}{
 		{
 			"+valid",
-			args{[]string{"foo=bar", "abc=def"}},
-			map[string]string{"foo": "bar", "abc": "def"},
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDriverVersion").ProvideOutput("Mock Driver Version"),
+				},
+			},
+			"Mock Driver Version",
 			false,
 		},
 		{
-			"+single",
-			args{[]string{"foo=bar"}},
-			map[string]string{"foo": "bar"},
-			false,
-		},
-		{
-			"-invalidVar",
-			args{[]string{"foo:bar"}},
-			nil,
+			"-invalid",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDriverVersion").ProvideOutput("").ProvideError(nvml.ErrNotFound),
+				},
+			},
+			"",
 			true,
 		},
 	}
@@ -144,52 +147,52 @@ func Test_getAll(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := getAll(tt.args.env)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("getAll() error = %v, wantErr %v", err, tt.wantErr)
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.expectations...)
+			// Initialize Handler with the mocked nvmlRunner
+			h := &Handler{
+				nvmlRunner: runner,
 			}
 
+			// Call the method being tested
+			got, err := h.GetDriverVersion(context.TODO(), nil, nil...)
+
+			// Check for error match
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.DriverVersion() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// Check for result match
 			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("getAll() = %s", diff)
+				t.Fatalf("Handler.DriverVersion() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatalf("Expected amount of calls not done")
 			}
 		})
 	}
 }
 
-func TestHandler_DriverVersion(t *testing.T) {
+func TestHandler_DeviceDiscovery(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		nvmlRunner nvml.Runner
+		nvmlRunner     nvml.Runner
+		deviceCacheMux *sync.Mutex
+		deviceCache    map[string]nvml.Device
+	}
+
+	type args struct {
 	}
 
 	tests := []struct {
 		name    string
 		fields  fields
+		args    args
 		want    any
 		wantErr bool
 	}{
-		{
-			name: "+valid",
-			fields: fields{
-				&nvmlmock.MockRunner{
-					DriverVersion: "Mock Driver Version",
-				},
-			},
-			want:    "Mock Driver Version",
-			wantErr: false,
-		},
-		{
-			name: "-invalid",
-			fields: fields{
-				&nvmlmock.MockRunner{
-					DriverVersion: "",
-					WantedErr:     nvml.ErrNotFound,
-				},
-			},
-			want:    "",
-			wantErr: true,
-		},
+		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -197,16 +200,17 @@ func TestHandler_DriverVersion(t *testing.T) {
 			t.Parallel()
 
 			h := &Handler{
-				nvmlRunner: tt.fields.nvmlRunner,
+				nvmlRunner:     tt.fields.nvmlRunner,
+				deviceCacheMux: tt.fields.deviceCacheMux,
+				deviceCache:    tt.fields.deviceCache,
 			}
-
-			got, err := h.DriverVersion(context.TODO(), nil, nil...)
+			got, err := h.DeviceDiscovery(context.TODO(), nil, nil...)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.DriverVersion() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("Handler.DeviceDiscovery() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.DriverVersion() = %s", diff)
+				t.Fatalf("Handler.DeviceDiscovery() = %s", diff)
 			}
 		})
 	}
