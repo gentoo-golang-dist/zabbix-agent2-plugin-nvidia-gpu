@@ -26,6 +26,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
 	nvmlmock "golang.zabbix.com/plugin/nvidia/pkg/nvml-mock"
+	"golang.zabbix.com/plugin/nvidia/plugin/params"
 	"golang.zabbix.com/sdk/errs"
 )
 
@@ -307,6 +308,276 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 			done := runner.ExpectedCallsDone()
 			if !done {
 				t.Fatal("Expected calls not done")
+			}
+		})
+	}
+}
+
+func TestHandler_GetDeviceCount(t *testing.T) {
+	t.Parallel()
+
+	type expect struct {
+		expectations []*nvmlmock.Expectation
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDeviceCount").ProvideOutput(uint(1)),
+				},
+			},
+			uint(1),
+			false,
+		},
+		{
+			"-invalid",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDeviceCount").ProvideOutput(uint(1)).ProvideError(nvml.ErrNotFound),
+				},
+			},
+			nil,
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.expectations...)
+			// Initialize Handler with the mocked nvmlRunner
+			h := &Handler{
+				nvmlRunner: runner,
+			}
+
+			// Call the method being tested
+			got, err := h.GetDeviceCount(context.TODO(), nil, nil...)
+
+			// Check for error match
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.DriverVersion() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// Check for result match
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.DriverVersion() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatalf("Expected amount of calls not done")
+			}
+		})
+	}
+}
+
+func TestHandler_GetNVMLVersion(t *testing.T) {
+	t.Parallel()
+
+	type expect struct {
+		expectations []*nvmlmock.Expectation
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetNVMLVersion").ProvideOutput("Mock NVML Version"),
+				},
+			},
+			"Mock NVML Version",
+			false,
+		},
+		{
+			"-invalid",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetNVMLVersion").ProvideOutput("").ProvideError(nvml.ErrNotFound),
+				},
+			},
+			"",
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.expectations...)
+			// Initialize Handler with the mocked nvmlRunner
+			h := &Handler{
+				nvmlRunner: runner,
+			}
+
+			// Call the method being tested
+			got, err := h.GetNVMLVersion(context.TODO(), nil, nil...)
+
+			// Check for error match
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.DriverVersion() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// Check for result match
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.DriverVersion() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatalf("Expected amount of calls not done")
+			}
+		})
+	}
+}
+
+func TestHandler_GetDeviceTemperature(t *testing.T) {
+	t.Parallel()
+
+	type device struct {
+		deviceUUID   string
+		expectations []*nvmlmock.Expectation
+	}
+
+	type expect struct {
+		device device
+	}
+
+	type args struct {
+		metricParams map[string]string
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			name: "+valid",
+			expect: expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetTemperature").
+										ProvideOutput(int(55)), // Expectation for valid temperature retrieval
+								),
+							),
+						// nvmlmock.NewExpectation("GetTemperature").
+						// 	ProvideOutput(int(55)), // Expectation for valid temperature retrieval
+					},
+				},
+			},
+			args: args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			want:    int(55),
+			wantErr: false,
+		},
+		{
+			"-noInMetricParams",
+			expect{},
+			args{
+				map[string]string{},
+			},
+			nil,
+			true,
+		},
+		{
+			name: "-deviceNotFound",
+			expect: expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(nil).ProvideError(nvml.ErrGpuIsLost),
+						// nvmlmock.NewExpectation("GetTemperature").
+						// 	ProvideOutput(int(55)), // Expectation for valid temperature retrieval
+					},
+				},
+			},
+			args: args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "-errorGettingTemperature",
+			expect: expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetTemperature").
+										ProvideOutput(int(0)).
+										ProvideError(nvml.ErrCorruptedInforom),
+								),
+							),
+					},
+				},
+			},
+			args: args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
+			}
+
+			got, err := h.GetDeviceTemperature(context.TODO(), tt.args.metricParams, nil...)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.GetDeviceTemperature() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.GetDeviceTemperature() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatalf("Expected calls not done")
 			}
 		})
 	}

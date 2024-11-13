@@ -9,11 +9,13 @@ import (
 
 var (
 	_ nvml.Runner = (*MockRunner)(nil)
+	_ Mocker      = (*MockRunner)(nil)
 )
 
 type MockRunner struct {
 	nvml.Runner
 	expectations []*Expectation
+	subMocks     []Mocker
 	callIdx      int
 	t            *testing.T
 }
@@ -29,6 +31,24 @@ func (m *MockRunner) ExpectCalls(expectations ...*Expectation) *MockRunner {
 	m.expectations = expectations
 
 	return m
+}
+
+func (m *MockRunner) SubMocks() []Mocker {
+	var subMocks []Mocker
+
+	for _, expect := range m.expectations {
+		for _, out := range expect.out {
+			subMock, ok := out.(Mocker)
+			if !ok {
+				continue
+			}
+
+			subMocks = append(subMocks, subMock)
+			subMocks = append(subMocks, subMock.SubMocks()...)
+		}
+	}
+
+	return subMocks
 }
 
 func (m *MockRunner) handleFunctionCall(name funcName, receivedArgs ...any) (*Expectation, error) {
@@ -53,15 +73,29 @@ func (m *MockRunner) handleFunctionCall(name funcName, receivedArgs ...any) (*Ex
 }
 
 func (m *MockRunner) ExpectedCallsDone() bool {
+	done := true
+
 	expected := len(m.expectations)
 	received := m.callIdx
 
 	if expected > received {
 		m.t.Errorf("received %d out of %d expected calls", received, expected)
-		return false
+
+		// TODO: PRINT WHAT CALLS ARE NOT DONE
+		for _, e := range m.expectations[received:] {
+			m.t.Errorf("Not called %q", e.funcName)
+		}
+
+		done = false
 	}
 
-	return true
+	for _, sub := range m.SubMocks() {
+		if !sub.ExpectedCallsDone() {
+			done = false
+		}
+	}
+
+	return done
 }
 
 func (m *MockRunner) Init() error {
@@ -95,6 +129,19 @@ func (m *MockRunner) GetDriverVersion() (string, error) {
 	return version, err
 }
 
+func (m *MockRunner) GetNVMLVersion() (string, error) {
+	res, err := m.handleFunctionCall("GetNVMLVersion")
+
+	// Type assertion to ensure res.resultArgs[0] is a string
+	version, ok := res.out[0].(string)
+	if !ok {
+		m.t.Errorf("expected string in GetNVMLVersion, got %T", res.out[0])
+		return "", nil
+	}
+
+	return version, err
+}
+
 func (m *MockRunner) GetDeviceCountV2() (uint, error) {
 	res, err := m.handleFunctionCall("GetDeviceCountV2")
 
@@ -118,6 +165,24 @@ func (m *MockRunner) GetDeviceByIndexV2(index uint) (nvml.Device, error) {
 	device, ok := res.out[0].(*MockDevice)
 	if !ok {
 		m.t.Errorf("expected *MockRunner in GetDeviceByIndexV2, got %T", res.out[0])
+		return nil, nil
+	}
+
+	device.t = m.t
+
+	return device, err
+}
+
+func (m *MockRunner) GetDeviceByUUID(uuid string) (nvml.Device, error) {
+	res, err := m.handleFunctionCall("GetDeviceByUUID", uuid)
+
+	if res.out[0] == nil {
+		return nil, err
+	}
+
+	device, ok := res.out[0].(*MockDevice)
+	if !ok {
+		m.t.Errorf("expected *MockRunner in GetDeviceByUUID, got %T", res.out[0])
 		return nil, nil
 	}
 

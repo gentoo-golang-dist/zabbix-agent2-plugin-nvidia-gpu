@@ -9,6 +9,7 @@ import (
 
 var (
 	_ nvml.Device = (*MockDevice)(nil)
+	_ Mocker      = (*MockDevice)(nil)
 )
 
 type MockDevice struct {
@@ -56,12 +57,35 @@ func (m *MockDevice) ExpectedCallsDone() bool {
 	expected := len(m.expectations)
 	received := m.callIdx
 
-	if expected > received {
-		m.t.Errorf("received %d out of %d expected calls", received, expected)
-		return false
+	if expected == received {
+		return true
 	}
 
-	return true
+	for _, e := range m.expectations[received:] {
+		m.t.Errorf("Not called %q", e.funcName)
+	}
+
+	m.t.Errorf("received %d out of %d expected calls", received, expected)
+
+	return false
+}
+
+func (m *MockDevice) SubMocks() []Mocker {
+	var subMocks []Mocker
+
+	for _, expect := range m.expectations {
+		for _, out := range expect.out {
+			subMock, ok := out.(Mocker)
+			if !ok {
+				continue
+			}
+
+			subMocks = append(subMocks, subMock)
+			subMocks = append(subMocks, subMock.SubMocks()...)
+		}
+	}
+
+	return subMocks
 }
 
 func (m *MockDevice) GetUUID() (string, error) {
@@ -86,4 +110,16 @@ func (m *MockDevice) GetName() (string, error) {
 	}
 
 	return uuid, err
+}
+
+func (m *MockDevice) GetTemperature() (int, error) {
+	res, err := m.handleFunctionCall("GetTemperature")
+
+	temperature, ok := res.out[0].(int)
+	if !ok {
+		m.t.Errorf("expected string in GetTemperature, got %T", res.out[0])
+		return 0, nil
+	}
+
+	return temperature, err
 }
