@@ -176,34 +176,125 @@ func TestHandler_DriverVersion(t *testing.T) {
 func TestHandler_DeviceDiscovery(t *testing.T) {
 	t.Parallel()
 
-	type fields struct {
-		nvmlRunner     nvml.Runner
-		deviceCacheMux *sync.Mutex
-		deviceCache    map[string]nvml.Device
-	}
-
-	type args struct {
+	type expect struct {
+		expectations []*nvmlmock.Expectation
 	}
 
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		expect  expect
 		want    any
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			"+valid",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDeviceCountV2").
+						ProvideOutput(uint(2)),
+					nvmlmock.NewExpectation("GetDeviceByIndexV2").
+						WithExpextedArgs(uint(0)).
+						ProvideOutput(
+							nvmlmock.NewMockDevice(t).ExpectCalls(
+								nvmlmock.NewExpectation("GetUUID").ProvideOutput("UUID1"),
+								nvmlmock.NewExpectation("GetName").ProvideOutput("Name1"),
+							),
+						),
+					nvmlmock.NewExpectation("GetDeviceByIndexV2").
+						WithExpextedArgs(uint(1)).
+						ProvideOutput(
+							nvmlmock.NewMockDevice(t).ExpectCalls(
+								nvmlmock.NewExpectation("GetUUID").ProvideOutput("UUID2"),
+								nvmlmock.NewExpectation("GetName").ProvideOutput("Name2"),
+							),
+						),
+				},
+			},
+			[]DiscoveryDevice{{"UUID1", "Name1"}, {"UUID2", "Name2"}},
+			false,
+		},
+		{
+			"-getCountError",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDeviceCountV2").
+						ProvideOutput(uint(0)).ProvideError(nvml.ErrUnknown),
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-getDeviceByIndexError",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDeviceCountV2").
+						ProvideOutput(uint(2)),
+					nvmlmock.NewExpectation("GetDeviceByIndexV2").
+						WithExpextedArgs(uint(0)).
+						ProvideOutput(nil).
+						ProvideError(nvml.ErrUnknown),
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-getUUIDError",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDeviceCountV2").
+						ProvideOutput(uint(2)),
+					nvmlmock.NewExpectation("GetDeviceByIndexV2").
+						WithExpextedArgs(uint(0)).
+						ProvideOutput(
+							nvmlmock.NewMockDevice(t).ExpectCalls(
+								nvmlmock.NewExpectation("GetUUID").
+									ProvideOutput("").
+									ProvideError(nvml.ErrUnknown),
+							),
+						),
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-getNameError",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDeviceCountV2").
+						ProvideOutput(uint(2)),
+					nvmlmock.NewExpectation("GetDeviceByIndexV2").
+						WithExpextedArgs(uint(0)).
+						ProvideOutput(
+							nvmlmock.NewMockDevice(t).ExpectCalls(
+								nvmlmock.NewExpectation("GetUUID").
+									ProvideOutput("123"),
+								nvmlmock.NewExpectation("GetName").
+									ProvideOutput("").
+									ProvideError(nvml.ErrUnknown),
+							),
+						),
+				},
+			},
+			nil,
+			true,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.expectations...)
+
 			h := &Handler{
-				nvmlRunner:     tt.fields.nvmlRunner,
-				deviceCacheMux: tt.fields.deviceCacheMux,
-				deviceCache:    tt.fields.deviceCache,
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
 			}
+
 			got, err := h.DeviceDiscovery(context.TODO(), nil, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.DeviceDiscovery() error = %v, wantErr %v", err, tt.wantErr)
@@ -211,6 +302,11 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Fatalf("Handler.DeviceDiscovery() = %s", diff)
+			}
+
+			done := runner.ExpectedCallsDone()
+			if !done {
+				t.Fatal("Expected calls not done")
 			}
 		})
 	}

@@ -148,7 +148,7 @@ func (h *Handler) GetDriverVersion(_ context.Context, _ map[string]string, _ ...
 func (h *Handler) DeviceDiscovery(_ context.Context, _ map[string]string, _ ...string) (any, error) {
 	deviceCount, err := h.nvmlRunner.GetDeviceCountV2()
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "failed to get device count")
 	}
 
 	var discovered []DiscoveryDevice

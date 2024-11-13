@@ -95,8 +95,25 @@ func (m *MockRunner) GetDriverVersion() (string, error) {
 	return version, err
 }
 
+func (m *MockRunner) GetDeviceCountV2() (uint, error) {
+	res, err := m.handleFunctionCall("GetDeviceCountV2")
+
+	// Type assertion to ensure res.resultArgs[0] is a string
+	count, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Errorf("expected uint in GetDeviceCountV2, got %T", res.out[0])
+		return 0, nil
+	}
+
+	return count, err
+}
+
 func (m *MockRunner) GetDeviceByIndexV2(index uint) (nvml.Device, error) {
 	res, err := m.handleFunctionCall("GetDeviceByIndexV2", index)
+
+	if res.out[0] == nil {
+		return nil, err
+	}
 
 	device, ok := res.out[0].(*MockDevice)
 	if !ok {
