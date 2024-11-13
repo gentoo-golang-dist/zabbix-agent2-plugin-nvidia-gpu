@@ -112,6 +112,18 @@ func (m *MockDevice) GetName() (string, error) {
 	return uuid, err
 }
 
+func (m *MockDevice) GetSerial() (string, error) {
+	res, err := m.handleFunctionCall("GetSerial")
+
+	serial, ok := res.out[0].(string)
+	if !ok {
+		m.t.Errorf("expected string in GetSerial, got %T", res.out[0])
+		return "", nil
+	}
+
+	return serial, err
+}
+
 func (m *MockDevice) GetTemperature() (int, error) {
 	res, err := m.handleFunctionCall("GetTemperature")
 
@@ -122,4 +134,64 @@ func (m *MockDevice) GetTemperature() (int, error) {
 	}
 
 	return temperature, err
+}
+
+func (m *MockDevice) GetFanSpeed() (uint, error) {
+	res, err := m.handleFunctionCall("GetFanSpeed")
+
+	fanSpeed, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Errorf("expected string in GetFanSpeed, got %T", res.out[0])
+		return 0, nil
+	}
+
+	return fanSpeed, err
+}
+
+func (m *MockDevice) GetPerformanceState() (uint, error) {
+	res, err := m.handleFunctionCall("GetPerformanceState")
+
+	state, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Errorf("expected string in GetPerformanceState, got %T", res.out[0])
+		return 0, nil
+	}
+
+	return state, err
+}
+
+func (m *MockDevice) GetPowerManagementLimit() (uint, error) {
+	res, err := m.handleFunctionCall("GetPowerManagementLimit")
+
+	limit, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Errorf("expected string in GetPowerManagementLimit, got %T", res.out[0])
+		return 0, nil
+	}
+
+	return limit, err
+}
+
+func (m *MockDevice) GetPowerUsage() (uint, error) {
+	res, err := m.handleFunctionCall("GetPowerUsage")
+
+	usage, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Errorf("expected string in GetPowerUsage, got %T", res.out[0])
+		return 0, nil
+	}
+
+	return usage, err
+}
+
+func (m *MockDevice) GetClockInfo(clock nvml.ClockType) (uint, error) {
+	res, err := m.handleFunctionCall("GetClockInfo", clock)
+
+	c, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Errorf("expected string in GetClockInfo, got %T", res.out[0])
+		return 0, nil
+	}
+
+	return c, err
 }
