@@ -9,13 +9,22 @@ import (
 
 var (
 	_ nvml.Runner = (*MockRunner)(nil)
+	_ Mocker      = (*MockRunner)(nil)
 )
+
+type Mocker interface {
+	ExpectedCallsDone() bool
+	// does not include the current mocker instance it self
+	SubMocks() []Mocker
+
+	// WithTesting(t *testing.T)
+}
 
 type MockRunner struct {
 	nvml.Runner
+	t            *testing.T
 	expectations []*Expectation
 	callIdx      int
-	t            *testing.T
 }
 
 func NewMockRunner(t *testing.T) *MockRunner {
@@ -29,6 +38,24 @@ func (m *MockRunner) ExpectCalls(expectations ...*Expectation) *MockRunner {
 	m.expectations = expectations
 
 	return m
+}
+
+func (m *MockRunner) SubMocks() []Mocker {
+	var subMocks []Mocker
+
+	for _, expect := range m.expectations {
+		for _, out := range expect.out {
+			subMock, ok := out.(Mocker)
+			if !ok {
+				continue
+			}
+
+			subMocks = append(subMocks, subMock)
+			subMocks = append(subMocks, subMock.SubMocks()...)
+		}
+	}
+
+	return subMocks
 }
 
 func (m *MockRunner) handleFunctionCall(name funcName, receivedArgs ...any) (*Expectation, error) {
@@ -45,7 +72,15 @@ func (m *MockRunner) handleFunctionCall(name funcName, receivedArgs ...any) (*Ex
 
 	// Compare expectedArgs and receivedArgs using cmp
 	if diff := cmp.Diff(expect.args, receivedArgs); diff != "" {
-		m.t.Errorf("arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s", name, m.callIdx, expect.args, receivedArgs, diff)
+		m.t.Errorf(
+			"arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s",
+			name,
+			m.callIdx,
+			expect.args,
+			receivedArgs,
+			diff,
+		)
+
 		return &Expectation{}, nil
 	}
 
@@ -53,15 +88,28 @@ func (m *MockRunner) handleFunctionCall(name funcName, receivedArgs ...any) (*Ex
 }
 
 func (m *MockRunner) ExpectedCallsDone() bool {
+	done := true
+
 	expected := len(m.expectations)
 	received := m.callIdx
 
 	if expected > received {
 		m.t.Errorf("received %d out of %d expected calls", received, expected)
-		return false
+		// TODO: PRINT WHAT CALLS ARE NOT DONE
+		for _, e := range m.expectations[received:] {
+			m.t.Errorf("Not called %q", e.funcName)
+		}
+
+		done = false
 	}
 
-	return true
+	for _, sub := range m.SubMocks() {
+		if !sub.ExpectedCallsDone() {
+			done = false
+		}
+	}
+
+	return done
 }
 
 func (m *MockRunner) Init() error {

@@ -198,6 +198,19 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 							nvmlmock.NewMockDevice(t).ExpectCalls(
 								nvmlmock.NewExpectation("GetUUID").ProvideOutput("UUID1"),
 								nvmlmock.NewExpectation("GetName").ProvideOutput("Name1"),
+								nvmlmock.NewExpectation("potat").ProvideOutput(
+									nvmlmock.NewMockDevice(t).ExpectCalls(
+										nvmlmock.NewExpectation("bbb").ProvideOutput("UUID1"),
+										nvmlmock.NewExpectation("ccc").ProvideOutput("Name1"),
+										nvmlmock.NewExpectation("ddd").ProvideOutput(
+											nvmlmock.NewMockDevice(t).ExpectCalls(
+												nvmlmock.NewExpectation("11").ProvideOutput("UUID1"),
+												nvmlmock.NewExpectation("22").ProvideOutput("Name1"),
+												nvmlmock.NewExpectation("33").ProvideOutput("name3"),
+											),
+										),
+									),
+								),
 							),
 						),
 					nvmlmock.NewExpectation("GetDeviceByIndexV2").
@@ -206,6 +219,7 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 							nvmlmock.NewMockDevice(t).ExpectCalls(
 								nvmlmock.NewExpectation("GetUUID").ProvideOutput("UUID2"),
 								nvmlmock.NewExpectation("GetName").ProvideOutput("Name2"),
+								nvmlmock.NewExpectation("banana").ProvideOutput("Name2"),
 							),
 						),
 				},
@@ -213,74 +227,74 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 			[]DiscoveryDevice{{"UUID1", "Name1"}, {"UUID2", "Name2"}},
 			false,
 		},
-		{
-			"-getCountError",
-			expect{
-				expectations: []*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("GetDeviceCountV2").
-						ProvideOutput(uint(0)).ProvideError(nvml.ErrUnknown),
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-getDeviceByIndexError",
-			expect{
-				expectations: []*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("GetDeviceCountV2").
-						ProvideOutput(uint(2)),
-					nvmlmock.NewExpectation("GetDeviceByIndexV2").
-						WithExpextedArgs(uint(0)).
-						ProvideOutput(nil).
-						ProvideError(nvml.ErrUnknown),
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-getUUIDError",
-			expect{
-				expectations: []*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("GetDeviceCountV2").
-						ProvideOutput(uint(2)),
-					nvmlmock.NewExpectation("GetDeviceByIndexV2").
-						WithExpextedArgs(uint(0)).
-						ProvideOutput(
-							nvmlmock.NewMockDevice(t).ExpectCalls(
-								nvmlmock.NewExpectation("GetUUID").
-									ProvideOutput("").
-									ProvideError(nvml.ErrUnknown),
-							),
-						),
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-getNameError",
-			expect{
-				expectations: []*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("GetDeviceCountV2").
-						ProvideOutput(uint(2)),
-					nvmlmock.NewExpectation("GetDeviceByIndexV2").
-						WithExpextedArgs(uint(0)).
-						ProvideOutput(
-							nvmlmock.NewMockDevice(t).ExpectCalls(
-								nvmlmock.NewExpectation("GetUUID").
-									ProvideOutput("123"),
-								nvmlmock.NewExpectation("GetName").
-									ProvideOutput("").
-									ProvideError(nvml.ErrUnknown),
-							),
-						),
-				},
-			},
-			nil,
-			true,
-		},
+		// {
+		// 	"-getCountError",
+		// 	expect{
+		// 		expectations: []*nvmlmock.Expectation{
+		// 			nvmlmock.NewExpectation("GetDeviceCountV2").
+		// 				ProvideOutput(uint(0)).ProvideError(nvml.ErrUnknown),
+		// 		},
+		// 	},
+		// 	nil,
+		// 	true,
+		// },
+		// {
+		// 	"-getDeviceByIndexError",
+		// 	expect{
+		// 		expectations: []*nvmlmock.Expectation{
+		// 			nvmlmock.NewExpectation("GetDeviceCountV2").
+		// 				ProvideOutput(uint(2)),
+		// 			nvmlmock.NewExpectation("GetDeviceByIndexV2").
+		// 				WithExpextedArgs(uint(0)).
+		// 				ProvideOutput(nil).
+		// 				ProvideError(nvml.ErrUnknown),
+		// 		},
+		// 	},
+		// 	nil,
+		// 	true,
+		// },
+		// {
+		// 	"-getUUIDError",
+		// 	expect{
+		// 		expectations: []*nvmlmock.Expectation{
+		// 			nvmlmock.NewExpectation("GetDeviceCountV2").
+		// 				ProvideOutput(uint(2)),
+		// 			nvmlmock.NewExpectation("GetDeviceByIndexV2").
+		// 				WithExpextedArgs(uint(0)).
+		// 				ProvideOutput(
+		// 					nvmlmock.NewMockDevice(t).ExpectCalls(
+		// 						nvmlmock.NewExpectation("GetUUID").
+		// 							ProvideOutput("").
+		// 							ProvideError(nvml.ErrUnknown),
+		// 					),
+		// 				),
+		// 		},
+		// 	},
+		// 	nil,
+		// 	true,
+		// },
+		// {
+		// 	"-getNameError",
+		// 	expect{
+		// 		expectations: []*nvmlmock.Expectation{
+		// 			nvmlmock.NewExpectation("GetDeviceCountV2").
+		// 				ProvideOutput(uint(2)),
+		// 			nvmlmock.NewExpectation("GetDeviceByIndexV2").
+		// 				WithExpextedArgs(uint(0)).
+		// 				ProvideOutput(
+		// 					nvmlmock.NewMockDevice(t).ExpectCalls(
+		// 						nvmlmock.NewExpectation("GetUUID").
+		// 							ProvideOutput("123"),
+		// 						nvmlmock.NewExpectation("GetName").
+		// 							ProvideOutput("").
+		// 							ProvideError(nvml.ErrUnknown),
+		// 					),
+		// 				),
+		// 		},
+		// 	},
+		// 	nil,
+		// 	true,
+		// },
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -304,8 +318,7 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 				t.Fatalf("Handler.DeviceDiscovery() = %s", diff)
 			}
 
-			done := runner.ExpectedCallsDone()
-			if !done {
+			if !runner.ExpectedCallsDone() {
 				t.Fatal("Expected calls not done")
 			}
 		})

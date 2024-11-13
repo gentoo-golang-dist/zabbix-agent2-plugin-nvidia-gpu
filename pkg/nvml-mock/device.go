@@ -9,6 +9,7 @@ import (
 
 var (
 	_ nvml.Device = (*MockDevice)(nil)
+	_ Mocker      = (*MockDevice)(nil)
 )
 
 type MockDevice struct {
@@ -23,6 +24,24 @@ func NewMockDevice(t *testing.T) *MockDevice {
 		t:            t,
 		expectations: []*Expectation{},
 	}
+}
+
+func (m *MockDevice) SubMocks() []Mocker {
+	var subMocks []Mocker
+
+	for _, expect := range m.expectations {
+		for _, out := range expect.out {
+			subMock, ok := out.(Mocker)
+			if !ok {
+				continue
+			}
+
+			subMocks = append(subMocks, subMock)
+			subMocks = append(subMocks, subMock.SubMocks()...)
+		}
+	}
+
+	return subMocks
 }
 
 func (m *MockDevice) ExpectCalls(expectations ...*Expectation) *MockDevice {
@@ -45,7 +64,14 @@ func (m *MockDevice) handleFunctionCall(name funcName, receivedArgs ...any) (*Ex
 
 	// Compare expectedArgs and receivedArgs using cmp
 	if diff := cmp.Diff(expect.args, receivedArgs); diff != "" {
-		m.t.Errorf("arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s", name, m.callIdx, expect.args, receivedArgs, diff)
+		m.t.Errorf(
+			"arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s",
+			name,
+			m.callIdx,
+			expect.args,
+			receivedArgs,
+			diff,
+		)
 		return &Expectation{}, nil
 	}
 
@@ -56,12 +82,17 @@ func (m *MockDevice) ExpectedCallsDone() bool {
 	expected := len(m.expectations)
 	received := m.callIdx
 
-	if expected > received {
-		m.t.Errorf("received %d out of %d expected calls", received, expected)
-		return false
+	if expected == received {
+		return true
 	}
 
-	return true
+	for _, e := range m.expectations[received:] {
+		m.t.Errorf("Not called %q", e.funcName)
+	}
+
+	m.t.Errorf("received %d out of %d expected calls", received, expected)
+
+	return false
 }
 
 func (m *MockDevice) GetUUID() (string, error) {
