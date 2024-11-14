@@ -53,11 +53,15 @@ func (m *MockRunner) SubMocks() []Mocker {
 
 func (m *MockRunner) handleFunctionCall(name funcName, receivedArgs ...any) (*Expectation, error) {
 	if m.callIdx >= len(m.expectations) {
-		m.t.Errorf("no more calls expected but got call for %q", name)
+		m.t.Fatalf("no more calls expected but got call for %q", name)
 	}
 
 	expect := m.expectations[m.callIdx]
 	m.callIdx++
+
+	if expect.funcName != string(name) {
+		m.t.Fatalf("got call for %q while expected for %q", name, expect.funcName)
+	}
 
 	if receivedArgs == nil {
 		receivedArgs = []any{}
@@ -65,7 +69,7 @@ func (m *MockRunner) handleFunctionCall(name funcName, receivedArgs ...any) (*Ex
 
 	// Compare expectedArgs and receivedArgs using cmp
 	if diff := cmp.Diff(expect.args, receivedArgs); diff != "" {
-		m.t.Errorf("arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s", name, m.callIdx, expect.args, receivedArgs, diff)
+		m.t.Fatalf("arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s", name, m.callIdx, expect.args, receivedArgs, diff)
 		return &Expectation{}, nil
 	}
 

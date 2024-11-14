@@ -43,7 +43,7 @@ var (
 	_ HandlerFunc = (*Handler)(nil).GetDeviceTemperature
 	_ HandlerFunc = (*Handler)(nil).GetDriverVersion
 	_ HandlerFunc = (*Handler)(nil).GetEncoderStats
-	_ HandlerFunc = (*Handler)(nil).GetEncoderUtilisation
+	_ HandlerFunc = (*Handler)(nil).GetEncoderUtilization
 	_ HandlerFunc = (*Handler)(nil).GetFBMemoryInfo
 	_ HandlerFunc = (*Handler)(nil).GetGraphicsFrequency
 	_ HandlerFunc = (*Handler)(nil).GetMemoryErrors
@@ -592,7 +592,7 @@ func (h *Handler) GetMemoryFrequency(_ context.Context, metricParams map[string]
 	return clock, nil
 }
 
-func (h *Handler) GetEncoderUtilisation(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func (h *Handler) GetEncoderUtilization(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for uuid")

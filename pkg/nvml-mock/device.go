@@ -34,11 +34,15 @@ func (m *MockDevice) ExpectCalls(expectations ...*Expectation) *MockDevice {
 
 func (m *MockDevice) handleFunctionCall(name funcName, receivedArgs ...any) (*Expectation, error) {
 	if m.callIdx >= len(m.expectations) {
-		m.t.Errorf("no more calls expected but got call for %q", name)
+		m.t.Fatalf("no more calls expected but got call for %q", name)
 	}
 
 	expect := m.expectations[m.callIdx]
 	m.callIdx++
+
+	if expect.funcName != string(name) {
+		m.t.Fatalf("got call for %q while expected for %q", name, expect.funcName)
+	}
 
 	if receivedArgs == nil {
 		receivedArgs = []any{}
@@ -46,8 +50,7 @@ func (m *MockDevice) handleFunctionCall(name funcName, receivedArgs ...any) (*Ex
 
 	// Compare expectedArgs and receivedArgs using cmp
 	if diff := cmp.Diff(expect.args, receivedArgs); diff != "" {
-		m.t.Errorf("arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s", name, m.callIdx, expect.args, receivedArgs, diff)
-		return &Expectation{}, nil
+		m.t.Fatalf("arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s", name, m.callIdx, expect.args, receivedArgs, diff)
 	}
 
 	return expect, expect.err
@@ -93,7 +96,7 @@ func (m *MockDevice) GetUUID() (string, error) {
 
 	uuid, ok := res.out[0].(string)
 	if !ok {
-		m.t.Errorf("expected string in GetUUID, got %T", res.out[0])
+		m.t.Fatalf("expected string in GetUUID, got %T", res.out[0])
 		return "", nil
 	}
 
@@ -194,4 +197,65 @@ func (m *MockDevice) GetClockInfo(clock nvml.ClockType) (uint, error) {
 	}
 
 	return c, err
+}
+
+func (m *MockDevice) GetTotalEnergyConsumption() (uint64, error) {
+	res, err := m.handleFunctionCall("GetTotalEnergyConsumption")
+
+	// Type assertion to ensure res.resultArgs[0] is a string
+	consumption, ok := res.out[0].(uint64)
+	if !ok {
+		m.t.Errorf("expected uint in GetTotalEnergyConsumption, got %T", res.out[0])
+		return 0, nil
+	}
+
+	return consumption, err
+}
+
+func (m *MockDevice) GetUtilizationRates() (uint, uint, error) {
+	res, err := m.handleFunctionCall("GetUtilizationRates")
+
+	util1, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Fatalf("expected uint for util1 in GetUtilizationRates, got %T", res.out[0])
+	}
+
+	util2, ok := res.out[1].(uint)
+	if !ok {
+		m.t.Fatalf("expected uint for util2 in GetUtilizationRates, got %T", res.out[1])
+	}
+
+	return util1, util2, err
+}
+
+func (m *MockDevice) GetMemoryErrorCounter(
+	memoryType nvml.MemoryErrorType,
+	memoryLocation nvml.MemoryLocation,
+	counterType nvml.EccCounterType) (uint64, error) {
+	res, err := m.handleFunctionCall("GetMemoryErrorCounter",
+		memoryType, memoryLocation, counterType,
+	)
+
+	rate, ok := res.out[0].(uint64)
+	if !ok {
+		m.t.Fatalf("expected uint64 for rate in GetMemoryErrorCounter, got %T", res.out[0])
+	}
+
+	return rate, err
+}
+
+func (m *MockDevice) GetEncoderUtilization() (uint, uint, error) {
+	res, err := m.handleFunctionCall("GetEncoderUtilization")
+
+	util1, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Fatalf("expected uint for util1 in GetEncoderUtilisation, got %T", res.out[0])
+	}
+
+	util2, ok := res.out[1].(uint)
+	if !ok {
+		m.t.Fatalf("expected uint for util2 in GetEncoderUtilisation, got %T", res.out[1])
+	}
+
+	return util1, util2, err
 }

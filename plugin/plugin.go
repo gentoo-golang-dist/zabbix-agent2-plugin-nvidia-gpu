@@ -358,7 +358,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetEncoderUtilisation,
+			handler: handler.GetEncoderUtilization,
 		},
 		"nvml.device.decoder.utilization": {
 			metric: metric.New(
