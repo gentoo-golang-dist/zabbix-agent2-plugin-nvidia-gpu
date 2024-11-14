@@ -32,7 +32,7 @@ var (
 	_ HandlerFunc = WithJSONResponse(nil)
 	_ HandlerFunc = (*Handler)(nil).GetNVMLVersion
 	_ HandlerFunc = (*Handler)(nil).GetBAR1MemoryInfo
-	_ HandlerFunc = (*Handler)(nil).GetDecoderUtilisation
+	_ HandlerFunc = (*Handler)(nil).GetDecoderUtilization
 	_ HandlerFunc = (*Handler)(nil).GetDeviceCount
 	_ HandlerFunc = (*Handler)(nil).GetDeviceEnergyConsumption
 	_ HandlerFunc = (*Handler)(nil).GetDeviceFanSpeed
@@ -611,7 +611,7 @@ func (h *Handler) GetEncoderUtilization(_ context.Context, metricParams map[stri
 	return utilisation, nil
 }
 
-func (h *Handler) GetDecoderUtilisation(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func (h *Handler) GetDecoderUtilization(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for uuid")

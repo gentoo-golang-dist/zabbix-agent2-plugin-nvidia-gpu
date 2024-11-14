@@ -259,3 +259,90 @@ func (m *MockDevice) GetEncoderUtilization() (uint, uint, error) {
 
 	return util1, util2, err
 }
+
+func (m *MockDevice) GetDecoderUtilization() (uint, uint, error) {
+	res, err := m.handleFunctionCall("GetDecoderUtilization")
+
+	util1, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Fatalf("expected uint for util1 in GetDecoderUtilisation, got %T", res.out[0])
+	}
+
+	util2, ok := res.out[1].(uint)
+	if !ok {
+		m.t.Fatalf("expected uint for util2 in GetDecoderUtilisation, got %T", res.out[1])
+	}
+
+	return util1, util2, err
+}
+
+func (m *MockDevice) GetEccMode() (bool, bool, error) {
+	res, err := m.handleFunctionCall("GetEccMode")
+
+	current, ok := res.out[0].(bool)
+	if !ok {
+		m.t.Fatalf("expected bool in GetEccMode, got %T", res.out[0])
+	}
+
+	pending, ok := res.out[1].(bool)
+	if !ok {
+		m.t.Fatalf("expected bool in GetEccMode, got %T", res.out[1])
+	}
+
+	return current, pending, err
+}
+
+func (m *MockDevice) GetPCIeThroughput(pcie nvml.PcieMetricType) (uint, error) {
+	res, err := m.handleFunctionCall("GetPCIeThroughput", pcie)
+
+	throughput, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Errorf("expected uint in GetPCIeThroughput, got %T", res.out[0])
+		return 0, nil
+	}
+
+	return throughput, err
+}
+
+func (m *MockDevice) GetMemoryInfoV2() (*nvml.MemoryInfoV2, error) {
+	res, err := m.handleFunctionCall("GetMemoryInfoV2")
+
+	info, ok := res.out[0].(*nvml.MemoryInfoV2)
+	if !ok {
+		m.t.Fatalf("expected %T in GetMemoryInfoV2, got %T", info, res.out[0])
+	}
+
+	return info, err
+}
+
+func (m *MockDevice) GetBAR1MemoryInfo() (*nvml.MemoryInfo, error) {
+	res, err := m.handleFunctionCall("GetBAR1MemoryInfo")
+
+	info, ok := res.out[0].(*nvml.MemoryInfo)
+	if !ok {
+		m.t.Fatalf("expected %T in GetBAR1MemoryInfo, got %T", info, res.out[0])
+	}
+
+	return info, err
+}
+
+func (m *MockDevice) GetEncoderStats() (uint, uint, uint, error) {
+	res, err := m.handleFunctionCall("GetEncoderStats")
+
+	sessions, ok := res.out[0].(uint)
+	if !ok {
+		m.t.Fatalf("expected %T in GetEncoderStats, got %T", sessions, res.out[0])
+	}
+
+	fps, ok := res.out[1].(uint)
+	if !ok {
+		m.t.Fatalf("expected %T in GetEncoderStats, got %T", fps, res.out[1])
+	}
+
+	latency, ok := res.out[2].(uint)
+	if !ok {
+		m.t.Fatalf("expected %T in GetEncoderStats, got %T", latency, res.out[2])
+	}
+
+	return sessions, fps, latency, err
+}

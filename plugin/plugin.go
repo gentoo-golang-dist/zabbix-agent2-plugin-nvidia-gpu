@@ -354,7 +354,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 		},
 		"nvml.device.encoder.utilization": {
 			metric: metric.New(
-				"Returns Encoder utilisation.",
+				"Returns Encoder utilization.",
 				params.Params,
 				false,
 			),
@@ -362,15 +362,15 @@ func (p *nvmlPlugin) registerMetrics() error {
 		},
 		"nvml.device.decoder.utilization": {
 			metric: metric.New(
-				"Returns Decoder utilisation.",
+				"Returns Decoder utilization.",
 				params.Params,
 				false,
 			),
-			handler: handler.GetDecoderUtilisation,
+			handler: handler.GetDecoderUtilization,
 		},
 		"nvml.device.utilization": {
 			metric: metric.New(
-				"Returns Device utilisation.",
+				"Returns Device utilization.",
 				params.Params,
 				false,
 			),
