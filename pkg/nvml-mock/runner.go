@@ -104,20 +104,20 @@ func (m *MockRunner) ExpectedCallsDone() bool {
 
 func (m *MockRunner) Init() error {
 	_, err := m.handleFunctionCall("Init")
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (m *MockRunner) InitV2() error {
 	_, err := m.handleFunctionCall("InitV2")
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
+}
+
+func (m *MockRunner) ShutdownNVML() error {
+	_, err := m.handleFunctionCall("ShutdownNVML")
+
+	return err
 }
 
 func (m *MockRunner) GetDriverVersion() (string, error) {

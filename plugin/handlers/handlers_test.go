@@ -3532,6 +3532,7 @@ func TestHandler_getDeviceByUUID(t *testing.T) {
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
 
 			deviceCache := make(map[string]nvml.Device)
+
 			for _, device := range tt.fields.deviceInCache {
 				device := device
 				deviceCache[device.UUID] = &device

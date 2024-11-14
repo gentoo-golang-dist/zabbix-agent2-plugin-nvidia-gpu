@@ -26,7 +26,6 @@ import (
 	"golang.zabbix.com/plugin/nvidia/plugin/handlers"
 	"golang.zabbix.com/plugin/nvidia/plugin/params"
 	"golang.zabbix.com/sdk/errs"
-	"golang.zabbix.com/sdk/log"
 	"golang.zabbix.com/sdk/metric"
 	"golang.zabbix.com/sdk/plugin"
 	"golang.zabbix.com/sdk/plugin/container"
@@ -97,10 +96,20 @@ func Launch() error {
 func (p *nvmlPlugin) Start() {
 	p.Logger.Infof("Start called")
 
-	err := initNVML(p.nvmlRunner, p.Logger)
+	// Try to initialize NVML using InitV2, fallback to Init if it fails
+	err := p.nvmlRunner.InitV2()
+	if err == nil {
+		return
+	}
+
+	p.Logger.Debugf("failed to init runner with InitNVMLv2: %v", err)
+
+	// Fallback to Init if InitV2 fails
+	err = p.nvmlRunner.Init()
 	if err != nil {
-		p.Logger.Errf("failed to initialise NVML library: %v", err)
-		panic(err)
+		wrappedErr := errs.Wrap(err, "failed to init NVML library")
+		p.Logger.Errf("%v", wrappedErr)
+		panic(wrappedErr)
 	}
 }
 
@@ -113,22 +122,6 @@ func (p *nvmlPlugin) Stop() {
 		p.Logger.Errf("failed to shutdown nvml %v", err)
 	}
 
-}
-
-func initNVML(runner nvml.Runner, loger log.Logger) error {
-	err := runner.InitV2()
-	if err == nil {
-		return nil
-	}
-
-	loger.Debugf("failed to init runner with InitNVMLv2 %v", err)
-
-	err = runner.Init()
-	if err != nil {
-		return errs.Wrap(err, "failed to init NVML library")
-	}
-
-	return nil
 }
 
 // Export collects all the metrics.
