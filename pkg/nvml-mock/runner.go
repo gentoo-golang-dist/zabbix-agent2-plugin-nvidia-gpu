@@ -186,11 +186,8 @@ func (m *MockRunner) GetDeviceByUUID(uuid string) (nvml.Device, error) {
 
 	device, ok := res.out[0].(*MockDevice)
 	if !ok {
-		m.t.Errorf("expected *MockRunner in GetDeviceByUUID, got %T", res.out[0])
-		return nil, nil
+		m.t.Fatalf("expected %T in GetDeviceByUUID, got %T", device, res.out[0])
 	}
-
-	device.t = m.t
 
 	return device, err
 }

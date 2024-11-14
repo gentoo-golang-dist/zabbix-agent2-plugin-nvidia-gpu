@@ -3426,3 +3426,135 @@ func TestHandler_GetEncoderStats(t *testing.T) {
 		})
 	}
 }
+
+func TestNew(t *testing.T) {
+	t.Parallel()
+
+	runner := nvmlmock.NewMockRunner(nil).ExpectCalls()
+
+	h := New(runner)
+
+	if h.nvmlRunner != runner {
+		t.Fatalf("Runner not as expected")
+	}
+
+	if h.deviceCache == nil {
+		t.Fatalf("Device cache not set")
+	}
+
+	if h.deviceCacheMux == nil {
+		t.Fatalf("Device cache mutex not set")
+	}
+}
+
+func TestHandler_getDeviceByUUID(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		runnerExpect  []*nvmlmock.Expectation
+		deviceInCache []nvmlmock.MockDevice
+	}
+
+	type args struct {
+		uuid string
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			name: "+deviceFromCache",
+			fields: fields{
+				runnerExpect: []*nvmlmock.Expectation{},
+				deviceInCache: []nvmlmock.MockDevice{
+					{UUID: "test-1"},
+					{UUID: "test-2"},
+					{UUID: "test-3"},
+				},
+			},
+			args: args{
+				uuid: "test-2",
+			},
+			want:    &nvmlmock.MockDevice{UUID: "test-2"},
+			wantErr: false,
+		},
+		{
+			name: "+deviceFromNVML",
+			fields: fields{
+				runnerExpect: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDeviceByUUID").
+						WithExpextedArgs("test-2").
+						ProvideOutput(&nvmlmock.MockDevice{UUID: "test-2"}).
+						ProvideError(nil),
+				},
+				deviceInCache: []nvmlmock.MockDevice{
+					{UUID: "test-1"},
+					{UUID: "test-3"},
+				},
+			},
+			args: args{
+				uuid: "test-2",
+			},
+			want:    &nvmlmock.MockDevice{UUID: "test-2"},
+			wantErr: false,
+		},
+		{
+			name: "-noDeviceFound",
+			fields: fields{
+				runnerExpect: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetDeviceByUUID").
+						WithExpextedArgs("test-2").
+						ProvideOutput(nil).
+						ProvideError(nvml.ErrNotFound),
+				},
+				deviceInCache: []nvmlmock.MockDevice{
+					{UUID: "test-1"},
+					{UUID: "test-3"},
+				},
+			},
+			args: args{
+				uuid: "test-2",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
+
+			deviceCache := make(map[string]nvml.Device)
+			for _, device := range tt.fields.deviceInCache {
+				device := device
+				deviceCache[device.UUID] = &device
+			}
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    deviceCache,
+			}
+
+			got, err := h.getDeviceByUUID(tt.args.uuid)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.getDeviceByUUID() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got, cmp.AllowUnexported(nvmlmock.MockDevice{})); diff != "" {
+				t.Fatalf("Handler.getDeviceByUUID() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Expected calls not done")
+			}
+		})
+	}
+}
