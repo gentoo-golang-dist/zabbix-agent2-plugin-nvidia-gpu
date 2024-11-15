@@ -24,9 +24,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.zabbix.com/plugin/nvidia/internal/plugin/params"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
 	nvmlmock "golang.zabbix.com/plugin/nvidia/pkg/nvml-mock"
-	"golang.zabbix.com/plugin/nvidia/plugin/params"
 	"golang.zabbix.com/sdk/errs"
 )
 

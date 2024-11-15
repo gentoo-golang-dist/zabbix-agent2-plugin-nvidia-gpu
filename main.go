@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"os"
 
-	"golang.zabbix.com/plugin/nvidia/plugin"
+	"golang.zabbix.com/plugin/nvidia/internal/plugin"
 	"golang.zabbix.com/sdk/plugin/flag"
 	"golang.zabbix.com/sdk/zbxerr"
 )

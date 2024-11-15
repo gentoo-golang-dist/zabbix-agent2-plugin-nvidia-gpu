@@ -24,8 +24,8 @@ import (
 	"sync"
 
 	"golang.org/x/sync/errgroup"
+	"golang.zabbix.com/plugin/nvidia/internal/plugin/params"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
-	"golang.zabbix.com/plugin/nvidia/plugin/params"
 	"golang.zabbix.com/sdk/errs"
 )
 

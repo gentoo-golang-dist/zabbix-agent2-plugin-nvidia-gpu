@@ -22,9 +22,9 @@ import (
 	"context"
 	"time"
 
+	"golang.zabbix.com/plugin/nvidia/internal/plugin/handlers"
+	"golang.zabbix.com/plugin/nvidia/internal/plugin/params"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
-	"golang.zabbix.com/plugin/nvidia/plugin/handlers"
-	"golang.zabbix.com/plugin/nvidia/plugin/params"
 	"golang.zabbix.com/sdk/errs"
 	"golang.zabbix.com/sdk/metric"
 	"golang.zabbix.com/sdk/plugin"
