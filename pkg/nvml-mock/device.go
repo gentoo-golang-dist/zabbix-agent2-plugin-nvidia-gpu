@@ -17,7 +17,6 @@ type MockDevice struct {
 	nvml.Device
 	expectations []*Expectation
 	callIdx      int
-	UUID         string
 	t            *testing.T
 }
 

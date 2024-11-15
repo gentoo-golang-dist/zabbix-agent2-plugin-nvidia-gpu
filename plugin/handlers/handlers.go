@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"sync"
 
+	"golang.org/x/sync/errgroup"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
 	"golang.zabbix.com/plugin/nvidia/plugin/params"
 	"golang.zabbix.com/sdk/errs"
@@ -63,6 +64,7 @@ type HandlerFunc func(
 
 // Handler hold client and syscall implementation for request functions.
 type Handler struct {
+	concurrentRuns int
 	nvmlRunner     nvml.Runner
 	deviceCacheMux *sync.Mutex
 	deviceCache    map[string]nvml.Device
@@ -108,6 +110,8 @@ type ECCMode struct {
 // New creates a new handler with initialized clients for system and tcp calls.
 func New(nvmlRunner nvml.Runner) *Handler {
 	return &Handler{
+		// negative indicates no limit
+		concurrentRuns: -1,
 		nvmlRunner:     nvmlRunner,
 		deviceCacheMux: &sync.Mutex{},
 		deviceCache:    make(map[string]nvml.Device),
@@ -135,40 +139,67 @@ func (h *Handler) GetDriverVersion(_ context.Context, _ map[string]string, _ ...
 }
 
 // DeviceDiscovery discovers devices and returns UUIDs and names of devices.
-func (h *Handler) DeviceDiscovery(_ context.Context, _ map[string]string, _ ...string) (any, error) {
+func (h *Handler) DeviceDiscovery(ctx context.Context, _ map[string]string, _ ...string) (any, error) {
 	deviceCount, err := h.nvmlRunner.GetDeviceCountV2()
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to get device count")
 	}
 
-	var discovered []DiscoveryDevice
+	var (
+		discoveredMux = &sync.Mutex{}
+		discovered    = make([]DiscoveryDevice, 0, 10)
+		deviceCache   = make(map[string]nvml.Device)
+	)
 
-	deviceCache := make(map[string]nvml.Device)
+	group, ctx := errgroup.WithContext(ctx)
+	group.SetLimit(h.concurrentRuns)
 
 	// Should be done in parallel
 	for i := uint(0); i < deviceCount; i++ {
-		device, err := h.nvmlRunner.GetDeviceByIndexV2(i)
-		if err != nil {
-			return nil, errs.Wrap(err, "failed to get device by index")
-		}
+		i := i
 
-		uuid, err := device.GetUUID()
-		if err != nil {
-			return nil, errs.Wrap(err, "failed to get device uuid")
-		}
+		group.Go(func() error {
+			select {
+			// fails on first discovery error
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
 
-		name, err := device.GetName()
-		if err != nil {
-			return nil, errs.Wrap(err, "failed to get device name")
-		}
+			device, err := h.nvmlRunner.GetDeviceByIndexV2(i) //nolint:govet
+			if err != nil {
+				return errs.Wrap(err, "failed to get device by index")
+			}
 
-		d := DiscoveryDevice{
-			UUID: uuid,
-			Name: name,
-		}
+			uuid, err := device.GetUUID()
+			if err != nil {
+				return errs.Wrap(err, "failed to get device uuid")
+			}
 
-		deviceCache[uuid] = device
-		discovered = append(discovered, d)
+			name, err := device.GetName()
+			if err != nil {
+				return errs.Wrap(err, "failed to get device name")
+			}
+
+			d := DiscoveryDevice{
+				UUID: uuid,
+				Name: name,
+			}
+
+			discoveredMux.Lock()
+			defer discoveredMux.Unlock()
+
+			deviceCache[uuid] = device
+
+			discovered = append(discovered, d)
+
+			return nil
+		})
+	}
+
+	err = group.Wait()
+	if err != nil {
+		return nil, errs.Wrap(err, "failed discovering devices")
 	}
 
 	h.deviceCacheMux.Lock()

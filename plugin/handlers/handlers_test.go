@@ -291,6 +291,7 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.expectations...)
 
 			h := &Handler{
+				concurrentRuns: 1,
 				nvmlRunner:     runner,
 				deviceCacheMux: &sync.Mutex{},
 				deviceCache:    make(map[string]nvml.Device),
@@ -3430,7 +3431,7 @@ func TestHandler_GetEncoderStats(t *testing.T) {
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	runner := nvmlmock.NewMockRunner(nil).ExpectCalls()
+	runner := nvmlmock.NewMockRunner(t).ExpectCalls()
 
 	h := New(runner)
 
@@ -3450,9 +3451,14 @@ func TestNew(t *testing.T) {
 func TestHandler_getDeviceByUUID(t *testing.T) {
 	t.Parallel()
 
+	type TestDevice struct {
+		nvml.Device
+		UUID string
+	}
+
 	type fields struct {
 		runnerExpect  []*nvmlmock.Expectation
-		deviceInCache []nvmlmock.MockDevice
+		deviceInCache map[string]TestDevice
 	}
 
 	type args struct {
@@ -3470,16 +3476,16 @@ func TestHandler_getDeviceByUUID(t *testing.T) {
 			name: "+deviceFromCache",
 			fields: fields{
 				runnerExpect: []*nvmlmock.Expectation{},
-				deviceInCache: []nvmlmock.MockDevice{
-					{UUID: "test-1"},
-					{UUID: "test-2"},
-					{UUID: "test-3"},
+				deviceInCache: map[string]TestDevice{
+					"test-1": {UUID: "test-1"},
+					"test-2": {UUID: "test-2"},
+					"test-3": {UUID: "test-3"},
 				},
 			},
 			args: args{
 				uuid: "test-2",
 			},
-			want:    &nvmlmock.MockDevice{UUID: "test-2"},
+			want:    TestDevice{UUID: "test-2"},
 			wantErr: false,
 		},
 		{
@@ -3488,18 +3494,18 @@ func TestHandler_getDeviceByUUID(t *testing.T) {
 				runnerExpect: []*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("GetDeviceByUUID").
 						WithExpextedArgs("test-2").
-						ProvideOutput(&nvmlmock.MockDevice{UUID: "test-2"}).
+						ProvideOutput(TestDevice{UUID: "test-2"}).
 						ProvideError(nil),
 				},
-				deviceInCache: []nvmlmock.MockDevice{
-					{UUID: "test-1"},
-					{UUID: "test-3"},
+				deviceInCache: map[string]TestDevice{
+					"test-1": {UUID: "test-1"},
+					"test-3": {UUID: "test-3"},
 				},
 			},
 			args: args{
 				uuid: "test-2",
 			},
-			want:    &nvmlmock.MockDevice{UUID: "test-2"},
+			want:    TestDevice{UUID: "test-2"},
 			wantErr: false,
 		},
 		{
@@ -3511,9 +3517,9 @@ func TestHandler_getDeviceByUUID(t *testing.T) {
 						ProvideOutput(nil).
 						ProvideError(nvml.ErrNotFound),
 				},
-				deviceInCache: []nvmlmock.MockDevice{
-					{UUID: "test-1"},
-					{UUID: "test-3"},
+				deviceInCache: map[string]TestDevice{
+					"test-1": {UUID: "test-1"},
+					"test-3": {UUID: "test-3"},
 				},
 			},
 			args: args{
@@ -3533,9 +3539,9 @@ func TestHandler_getDeviceByUUID(t *testing.T) {
 
 			deviceCache := make(map[string]nvml.Device)
 
-			for _, device := range tt.fields.deviceInCache {
+			for key, device := range tt.fields.deviceInCache {
 				device := device
-				deviceCache[device.UUID] = &device
+				deviceCache[key] = device
 			}
 
 			h := &Handler{
@@ -3549,7 +3555,7 @@ func TestHandler_getDeviceByUUID(t *testing.T) {
 				t.Fatalf("Handler.getDeviceByUUID() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if diff := cmp.Diff(tt.want, got, cmp.AllowUnexported(nvmlmock.MockDevice{})); diff != "" {
+			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Fatalf("Handler.getDeviceByUUID() = %s", diff)
 			}
 
