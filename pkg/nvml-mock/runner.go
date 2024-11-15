@@ -12,27 +12,38 @@ var (
 	_ Mocker      = (*MockRunner)(nil)
 )
 
+// Mocker any mock should implement to collect information if all its and submock calls are done.
+type Mocker interface {
+	ExpectedCallsDone() bool
+	SubMocks() []Mocker
+}
+
+// MockRunner is mock for NVML Runner.
 type MockRunner struct {
 	nvml.Runner
 	expectations []*Expectation
-	subMocks     []Mocker
 	callIdx      int
 	t            *testing.T
 }
 
+// NewMockRunner creates new mock runner.
 func NewMockRunner(t *testing.T) *MockRunner {
+	t.Helper()
+
 	return &MockRunner{
 		t:            t,
 		expectations: []*Expectation{},
 	}
 }
 
+// ExpectCalls sets calls that are expected by mock.
 func (m *MockRunner) ExpectCalls(expectations ...*Expectation) *MockRunner {
 	m.expectations = expectations
 
 	return m
 }
 
+// SubMocks returns submocks of the mock.
 func (m *MockRunner) SubMocks() []Mocker {
 	var subMocks []Mocker
 
@@ -51,31 +62,7 @@ func (m *MockRunner) SubMocks() []Mocker {
 	return subMocks
 }
 
-func (m *MockRunner) handleFunctionCall(name funcName, receivedArgs ...any) (*Expectation, error) {
-	if m.callIdx >= len(m.expectations) {
-		m.t.Fatalf("no more calls expected but got call for %q", name)
-	}
-
-	expect := m.expectations[m.callIdx]
-	m.callIdx++
-
-	if expect.funcName != string(name) {
-		m.t.Fatalf("got call for %q while expected for %q", name, expect.funcName)
-	}
-
-	if receivedArgs == nil {
-		receivedArgs = []any{}
-	}
-
-	// Compare expectedArgs and receivedArgs using cmp
-	if diff := cmp.Diff(expect.args, receivedArgs); diff != "" {
-		m.t.Fatalf("arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s", name, m.callIdx, expect.args, receivedArgs, diff)
-		return &Expectation{}, nil
-	}
-
-	return expect, expect.err
-}
-
+// ExpectedCallsDone checks if all expected calls of mock and it's submocks are done.
 func (m *MockRunner) ExpectedCallsDone() bool {
 	done := true
 
@@ -85,7 +72,6 @@ func (m *MockRunner) ExpectedCallsDone() bool {
 	if expected > received {
 		m.t.Errorf("received %d out of %d expected calls", received, expected)
 
-		// TODO: PRINT WHAT CALLS ARE NOT DONE
 		for _, e := range m.expectations[received:] {
 			m.t.Errorf("Not called %q", e.funcName)
 		}
@@ -102,64 +88,75 @@ func (m *MockRunner) ExpectedCallsDone() bool {
 	return done
 }
 
+// Init is mock function.
 func (m *MockRunner) Init() error {
+	m.t.Helper()
 	_, err := m.handleFunctionCall("Init")
 
 	return err
 }
 
+// InitV2 is mock function.
 func (m *MockRunner) InitV2() error {
+	m.t.Helper()
 	_, err := m.handleFunctionCall("InitV2")
 
 	return err
 }
 
+// ShutdownNVML is mock function.
 func (m *MockRunner) ShutdownNVML() error {
+	m.t.Helper()
 	_, err := m.handleFunctionCall("ShutdownNVML")
 
 	return err
 }
 
+// GetDriverVersion is mock function.
 func (m *MockRunner) GetDriverVersion() (string, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetDriverVersion")
 
 	// Type assertion to ensure res.resultArgs[0] is a string
 	version, ok := res.out[0].(string)
 	if !ok {
-		m.t.Errorf("expected string in GetDriverVersion, got %T", res.out[0])
-		return "", nil
+		m.t.Fatalf("expected string in GetDriverVersion, got %T", res.out[0])
 	}
 
 	return version, err
 }
 
+// GetNVMLVersion is mock function.
 func (m *MockRunner) GetNVMLVersion() (string, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetNVMLVersion")
 
-	// Type assertion to ensure res.resultArgs[0] is a string
 	version, ok := res.out[0].(string)
 	if !ok {
-		m.t.Errorf("expected string in GetNVMLVersion, got %T", res.out[0])
-		return "", nil
+		m.t.Fatalf("expected string in GetNVMLVersion, got %T", res.out[0])
 	}
 
 	return version, err
 }
 
+// GetDeviceCountV2 is mock function.
 func (m *MockRunner) GetDeviceCountV2() (uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetDeviceCountV2")
 
-	// Type assertion to ensure res.resultArgs[0] is a string
 	count, ok := res.out[0].(uint)
 	if !ok {
-		m.t.Errorf("expected uint in GetDeviceCountV2, got %T", res.out[0])
-		return 0, nil
+		m.t.Fatalf("expected uint in GetDeviceCountV2, got %T", res.out[0])
 	}
 
 	return count, err
 }
 
+// GetDeviceByIndexV2 is mock function.
+//
+//nolint:ireturn
 func (m *MockRunner) GetDeviceByIndexV2(index uint) (nvml.Device, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetDeviceByIndexV2", index)
 
 	if res.out[0] == nil {
@@ -168,8 +165,7 @@ func (m *MockRunner) GetDeviceByIndexV2(index uint) (nvml.Device, error) {
 
 	device, ok := res.out[0].(*MockDevice)
 	if !ok {
-		m.t.Errorf("expected *MockRunner in GetDeviceByIndexV2, got %T", res.out[0])
-		return nil, nil
+		m.t.Fatalf("expected *MockRunner in GetDeviceByIndexV2, got %T", res.out[0])
 	}
 
 	device.t = m.t
@@ -177,7 +173,11 @@ func (m *MockRunner) GetDeviceByIndexV2(index uint) (nvml.Device, error) {
 	return device, err
 }
 
+// GetDeviceByUUID is mock function.
+//
+//nolint:ireturn
 func (m *MockRunner) GetDeviceByUUID(uuid string) (nvml.Device, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetDeviceByUUID", uuid)
 
 	if res.out[0] == nil {
@@ -190,4 +190,38 @@ func (m *MockRunner) GetDeviceByUUID(uuid string) (nvml.Device, error) {
 	}
 
 	return device, err
+}
+
+// handleFunctionCall is handler for mock function calls.
+// Takes in function name and any number of arguments function received.
+func (m *MockRunner) handleFunctionCall(name string, receivedArgs ...any) (*Expectation, error) {
+	m.t.Helper()
+
+	if m.callIdx >= len(m.expectations) {
+		m.t.Fatalf("no more calls expected but got call for %q", name)
+	}
+
+	expect := m.expectations[m.callIdx]
+	m.callIdx++
+
+	if expect.funcName != name {
+		m.t.Fatalf("got call for %q while expected for %q", name, expect.funcName)
+	}
+
+	if receivedArgs == nil {
+		receivedArgs = []any{}
+	}
+
+	// Compare expectedArgs and receivedArgs using cmp
+	if diff := cmp.Diff(expect.args, receivedArgs); diff != "" {
+		m.t.Fatalf("arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s",
+			name,
+			m.callIdx,
+			expect.args,
+			receivedArgs,
+			diff,
+		)
+	}
+
+	return expect, expect.err
 }

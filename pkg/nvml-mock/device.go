@@ -12,6 +12,7 @@ var (
 	_ Mocker      = (*MockDevice)(nil)
 )
 
+// MockDevice is mock for NVML device.
 type MockDevice struct {
 	nvml.Device
 	expectations []*Expectation
@@ -20,44 +21,26 @@ type MockDevice struct {
 	t            *testing.T
 }
 
+// NewMockDevice returns new mock device.
 func NewMockDevice(t *testing.T) *MockDevice {
+	t.Helper()
+
 	return &MockDevice{
 		t:            t,
 		expectations: []*Expectation{},
 	}
 }
 
+// ExpectCalls sets calls that are expected by mock.
 func (m *MockDevice) ExpectCalls(expectations ...*Expectation) *MockDevice {
 	m.expectations = expectations
 
 	return m
 }
 
-func (m *MockDevice) handleFunctionCall(name funcName, receivedArgs ...any) (*Expectation, error) {
-	if m.callIdx >= len(m.expectations) {
-		m.t.Fatalf("no more calls expected but got call for %q", name)
-	}
-
-	expect := m.expectations[m.callIdx]
-	m.callIdx++
-
-	if expect.funcName != string(name) {
-		m.t.Fatalf("got call for %q while expected for %q", name, expect.funcName)
-	}
-
-	if receivedArgs == nil {
-		receivedArgs = []any{}
-	}
-
-	// Compare expectedArgs and receivedArgs using cmp
-	if diff := cmp.Diff(expect.args, receivedArgs); diff != "" {
-		m.t.Fatalf("arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s", name, m.callIdx, expect.args, receivedArgs, diff)
-	}
-
-	return expect, expect.err
-}
-
+// ExpectedCallsDone checks if all expected calls of mock and it's submocks are done.
 func (m *MockDevice) ExpectedCallsDone() bool {
+	m.t.Helper()
 	expected := len(m.expectations)
 	received := m.callIdx
 
@@ -74,6 +57,7 @@ func (m *MockDevice) ExpectedCallsDone() bool {
 	return false
 }
 
+// SubMocks returns submocks of the mock.
 func (m *MockDevice) SubMocks() []Mocker {
 	var subMocks []Mocker
 
@@ -92,128 +76,140 @@ func (m *MockDevice) SubMocks() []Mocker {
 	return subMocks
 }
 
+// GetUUID is mock function.
 func (m *MockDevice) GetUUID() (string, error) {
+	m.t.Helper()
+
 	res, err := m.handleFunctionCall("GetUUID")
 
 	uuid, ok := res.out[0].(string)
 	if !ok {
 		m.t.Fatalf("expected string in GetUUID, got %T", res.out[0])
-		return "", nil
 	}
 
 	return uuid, err
 }
 
+// GetName is mock function.
 func (m *MockDevice) GetName() (string, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetName")
 
 	uuid, ok := res.out[0].(string)
 	if !ok {
-		m.t.Errorf("expected string in GetName, got %T", res.out[0])
-		return "", nil
+		m.t.Fatalf("expected string in GetName, got %T", res.out[0])
 	}
 
 	return uuid, err
 }
 
+// GetSerial is mock function.
 func (m *MockDevice) GetSerial() (string, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetSerial")
 
 	serial, ok := res.out[0].(string)
 	if !ok {
-		m.t.Errorf("expected string in GetSerial, got %T", res.out[0])
-		return "", nil
+		m.t.Fatalf("expected string in GetSerial, got %T", res.out[0])
 	}
 
 	return serial, err
 }
 
+// GetTemperature is mock function.
 func (m *MockDevice) GetTemperature() (int, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetTemperature")
 
 	temperature, ok := res.out[0].(int)
 	if !ok {
-		m.t.Errorf("expected string in GetTemperature, got %T", res.out[0])
-		return 0, nil
+		m.t.Fatalf("expected string in GetTemperature, got %T", res.out[0])
 	}
 
 	return temperature, err
 }
 
+// GetFanSpeed is mock function.
 func (m *MockDevice) GetFanSpeed() (uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetFanSpeed")
 
 	fanSpeed, ok := res.out[0].(uint)
 	if !ok {
-		m.t.Errorf("expected string in GetFanSpeed, got %T", res.out[0])
-		return 0, nil
+		m.t.Fatalf("expected string in GetFanSpeed, got %T", res.out[0])
 	}
 
 	return fanSpeed, err
 }
 
+// GetPerformanceState is mock function.
 func (m *MockDevice) GetPerformanceState() (uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetPerformanceState")
 
 	state, ok := res.out[0].(uint)
 	if !ok {
-		m.t.Errorf("expected string in GetPerformanceState, got %T", res.out[0])
-		return 0, nil
+		m.t.Fatalf("expected string in GetPerformanceState, got %T", res.out[0])
 	}
 
 	return state, err
 }
 
+// GetPowerManagementLimit is mock function.
 func (m *MockDevice) GetPowerManagementLimit() (uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetPowerManagementLimit")
 
 	limit, ok := res.out[0].(uint)
 	if !ok {
-		m.t.Errorf("expected string in GetPowerManagementLimit, got %T", res.out[0])
-		return 0, nil
+		m.t.Fatalf("expected string in GetPowerManagementLimit, got %T", res.out[0])
 	}
 
 	return limit, err
 }
 
+// GetPowerUsage is mock function.
 func (m *MockDevice) GetPowerUsage() (uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetPowerUsage")
 
 	usage, ok := res.out[0].(uint)
 	if !ok {
-		m.t.Errorf("expected string in GetPowerUsage, got %T", res.out[0])
-		return 0, nil
+		m.t.Fatalf("expected string in GetPowerUsage, got %T", res.out[0])
 	}
 
 	return usage, err
 }
 
+// GetClockInfo is mock function.
 func (m *MockDevice) GetClockInfo(clock nvml.ClockType) (uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetClockInfo", clock)
 
 	c, ok := res.out[0].(uint)
 	if !ok {
-		m.t.Errorf("expected string in GetClockInfo, got %T", res.out[0])
-		return 0, nil
+		m.t.Fatalf("expected string in GetClockInfo, got %T", res.out[0])
 	}
 
 	return c, err
 }
 
+// GetTotalEnergyConsumption is mock function.
 func (m *MockDevice) GetTotalEnergyConsumption() (uint64, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetTotalEnergyConsumption")
 
-	// Type assertion to ensure res.resultArgs[0] is a string
 	consumption, ok := res.out[0].(uint64)
 	if !ok {
-		m.t.Errorf("expected uint in GetTotalEnergyConsumption, got %T", res.out[0])
-		return 0, nil
+		m.t.Fatalf("expected uint in GetTotalEnergyConsumption, got %T", res.out[0])
 	}
 
 	return consumption, err
 }
 
+// GetUtilizationRates is mock function.
 func (m *MockDevice) GetUtilizationRates() (uint, uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetUtilizationRates")
 
 	util1, ok := res.out[0].(uint)
@@ -229,10 +225,12 @@ func (m *MockDevice) GetUtilizationRates() (uint, uint, error) {
 	return util1, util2, err
 }
 
+// GetMemoryErrorCounter is mock function.
 func (m *MockDevice) GetMemoryErrorCounter(
 	memoryType nvml.MemoryErrorType,
 	memoryLocation nvml.MemoryLocation,
 	counterType nvml.EccCounterType) (uint64, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetMemoryErrorCounter",
 		memoryType, memoryLocation, counterType,
 	)
@@ -245,7 +243,9 @@ func (m *MockDevice) GetMemoryErrorCounter(
 	return rate, err
 }
 
+// GetEncoderUtilization is mock function.
 func (m *MockDevice) GetEncoderUtilization() (uint, uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetEncoderUtilization")
 
 	util1, ok := res.out[0].(uint)
@@ -261,7 +261,9 @@ func (m *MockDevice) GetEncoderUtilization() (uint, uint, error) {
 	return util1, util2, err
 }
 
+// GetDecoderUtilization is mock function.
 func (m *MockDevice) GetDecoderUtilization() (uint, uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetDecoderUtilization")
 
 	util1, ok := res.out[0].(uint)
@@ -277,7 +279,9 @@ func (m *MockDevice) GetDecoderUtilization() (uint, uint, error) {
 	return util1, util2, err
 }
 
+// GetEccMode is mock function.
 func (m *MockDevice) GetEccMode() (bool, bool, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetEccMode")
 
 	current, ok := res.out[0].(bool)
@@ -293,19 +297,22 @@ func (m *MockDevice) GetEccMode() (bool, bool, error) {
 	return current, pending, err
 }
 
+// GetPCIeThroughput is mock function.
 func (m *MockDevice) GetPCIeThroughput(pcie nvml.PcieMetricType) (uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetPCIeThroughput", pcie)
 
 	throughput, ok := res.out[0].(uint)
 	if !ok {
-		m.t.Errorf("expected uint in GetPCIeThroughput, got %T", res.out[0])
-		return 0, nil
+		m.t.Fatalf("expected uint in GetPCIeThroughput, got %T", res.out[0])
 	}
 
 	return throughput, err
 }
 
+// GetMemoryInfoV2 is mock function.
 func (m *MockDevice) GetMemoryInfoV2() (*nvml.MemoryInfoV2, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetMemoryInfoV2")
 
 	info, ok := res.out[0].(*nvml.MemoryInfoV2)
@@ -316,7 +323,9 @@ func (m *MockDevice) GetMemoryInfoV2() (*nvml.MemoryInfoV2, error) {
 	return info, err
 }
 
+// GetBAR1MemoryInfo is mock function.
 func (m *MockDevice) GetBAR1MemoryInfo() (*nvml.MemoryInfo, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetBAR1MemoryInfo")
 
 	info, ok := res.out[0].(*nvml.MemoryInfo)
@@ -327,7 +336,9 @@ func (m *MockDevice) GetBAR1MemoryInfo() (*nvml.MemoryInfo, error) {
 	return info, err
 }
 
+// GetEncoderStats is mock function.
 func (m *MockDevice) GetEncoderStats() (uint, uint, uint, error) {
+	m.t.Helper()
 	res, err := m.handleFunctionCall("GetEncoderStats")
 
 	sessions, ok := res.out[0].(uint)
@@ -346,4 +357,38 @@ func (m *MockDevice) GetEncoderStats() (uint, uint, uint, error) {
 	}
 
 	return sessions, fps, latency, err
+}
+
+// handleFunctionCall is handler for mock function calls.
+// Takes in function name and any number of arguments function received.
+func (m *MockDevice) handleFunctionCall(name string, receivedArgs ...any) (*Expectation, error) {
+	m.t.Helper()
+
+	if m.callIdx >= len(m.expectations) {
+		m.t.Fatalf("no more calls expected but got call for %q", name)
+	}
+
+	expect := m.expectations[m.callIdx]
+	m.callIdx++
+
+	if expect.funcName != name {
+		m.t.Fatalf("got call for %q while expected for %q", name, expect.funcName)
+	}
+
+	if receivedArgs == nil {
+		receivedArgs = []any{}
+	}
+
+	// Compare expectedArgs and receivedArgs using cmp
+	if diff := cmp.Diff(expect.args, receivedArgs); diff != "" {
+		m.t.Fatalf(`arguments mismatch in %s call %d:\nexpected: %v\nreceived: %v\ndiff: %s`,
+			name,
+			m.callIdx,
+			expect.args,
+			receivedArgs,
+			diff,
+		)
+	}
+
+	return expect, expect.err
 }

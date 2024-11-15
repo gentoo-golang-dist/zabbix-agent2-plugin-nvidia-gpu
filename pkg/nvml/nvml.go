@@ -89,6 +89,7 @@ type Device interface {
 	// GetPowerManagementLimit retrieves the power management limit of the NVIDIA device in milliwatts.
 	GetPowerManagementLimit() (uint, error)
 
+	// GetTotalEnergyConsumption retrieves the total energy consumption of the NVIDIA device in millijoules.
 	GetTotalEnergyConsumption() (uint64, error)
 
 	// GetEncoderStats retrieves statistics related to the encoder activity on the device.

@@ -2116,7 +2116,7 @@ func TestHandler_GetMemoryErrors(t *testing.T) {
 					params.DeviceUUIDParamName: "test-uuid",
 				},
 			},
-			want:    EccErrors{Corrected: 55, Uncorrected: 25},
+			want:    ECCErrors{Corrected: 55, Uncorrected: 25},
 			wantErr: false,
 		},
 		{
@@ -2298,7 +2298,7 @@ func TestHandler_GetRegistryErrors(t *testing.T) {
 					params.DeviceUUIDParamName: "test-uuid",
 				},
 			},
-			want:    EccErrors{Corrected: 55, Uncorrected: 25},
+			want:    ECCErrors{Corrected: 55, Uncorrected: 25},
 			wantErr: false,
 		},
 		{
@@ -2738,7 +2738,7 @@ func TestHandler_GetECCMode(t *testing.T) {
 					params.DeviceUUIDParamName: "test-uuid",
 				},
 			},
-			want:    EccMode{Currect: true, Pending: false},
+			want:    ECCMode{Currect: true, Pending: false},
 			wantErr: false,
 		},
 		{
@@ -2876,7 +2876,7 @@ func TestHandler_GetPCIeThroughput(t *testing.T) {
 					params.DeviceUUIDParamName: "test-uuid",
 				},
 			},
-			want:    PcieUtil{Receive: 55, Transmit: 25},
+			want:    PCIeUtil{Receive: 55, Transmit: 25},
 			wantErr: false,
 		},
 		{

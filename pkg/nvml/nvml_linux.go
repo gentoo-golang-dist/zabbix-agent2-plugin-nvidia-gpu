@@ -12,10 +12,10 @@ package nvml
 #include <dlfcn.h>
 #include <stdlib.h>
 */
-import "C"
+import "C" //nolint:gocritic
 import (
 	"sync"
-	"unsafe"
+	"unsafe" //nolint:gocritic
 
 	"golang.zabbix.com/sdk/errs"
 )
@@ -57,7 +57,7 @@ func NewNVMLRunner() (*NVMLRunner, error) {
 	return runner, nil
 }
 
-// InitNVML initializes the NVML library using the older NVML interface.
+// Init initializes the NVML library using the older NVML interface.
 func (runner *NVMLRunner) Init() error {
 	err := runner.symbolExists("nvmlInit")
 	if err != nil {
@@ -73,7 +73,7 @@ func (runner *NVMLRunner) Init() error {
 	return nil
 }
 
-// InitNVMLv2 initializes the NVML library using the NVML v2 interface.
+// InitV2 initializes the NVML library using the NVML v2 interface.
 func (runner *NVMLRunner) InitV2() error {
 	err := runner.symbolExists("nvmlInit_v2")
 	if err != nil {
@@ -162,6 +162,8 @@ func (runner *NVMLRunner) GetDeviceCount() (uint, error) {
 }
 
 // GetDeviceByIndexV2 retrieves a handle to an NVIDIA device by its index using the NVML v2 interface.
+//
+//nolint:ireturn
 func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (Device, error) {
 	err := runner.symbolExists("nvmlDeviceGetHandleByIndex_v2")
 	if err != nil {
@@ -186,6 +188,8 @@ func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (Device, error) {
 }
 
 // GetDeviceByUUID retrieves a handle to an NVIDIA device by its UUID.
+//
+//nolint:ireturn
 func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (Device, error) {
 	err := runner.symbolExists("nvmlDeviceGetHandleByUUID")
 	if err != nil {
