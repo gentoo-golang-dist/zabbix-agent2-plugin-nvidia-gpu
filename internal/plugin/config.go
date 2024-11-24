@@ -12,7 +12,7 @@ import (
 
 type pluginConfig struct {
 	plugin.SystemOptions `conf:"optional,name=System"`
-	// Timeout.
+	// Timeout is plugin connection timeout.
 	Timeout int `conf:"optional,range=1:30"`
 }
 
@@ -38,9 +38,7 @@ func (p *nvmlPlugin) Configure(global *plugin.GlobalOptions, options any) {
 // Validate implements the Configurator interface.
 // Returns an error if validation of a plugin's configuration is failed.
 func (*nvmlPlugin) Validate(options any) error {
-	var opts pluginConfig
-
-	err := conf.Unmarshal(options, &opts)
+	err := conf.Unmarshal(options, &pluginConfig{})
 	if err != nil {
 		return errs.Wrap(err, "failed to unmarshal configuration options")
 	}

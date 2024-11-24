@@ -28,7 +28,7 @@ func (m *MockCtxProvider) Timeout() int {
 	return m.timeout
 }
 
-func Test_examplePlugin_Export(t *testing.T) {
+func Test_nvmlPlugin_Export(t *testing.T) {
 	t.Parallel()
 
 	testParams := []*metric.Param{
@@ -95,7 +95,7 @@ func Test_examplePlugin_Export(t *testing.T) {
 			t.Parallel()
 
 			p := &nvmlPlugin{
-				metrics: map[string]*exampleMetric{
+				metrics: map[string]*nvmlMetric{
 					"test": {
 						metric: metric.New("test metric", testParams, false),
 						handler: func(
@@ -116,17 +116,17 @@ func Test_examplePlugin_Export(t *testing.T) {
 
 			got, err := p.Export(tt.args.key, tt.args.rawParams, &ctxPrvider)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("examplePlugin.Export() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("nvmlPlugin.Export() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("examplePlugin.Export() = %s", diff)
+				t.Fatalf("nvmlPlugin.Export() = %s", diff)
 			}
 		})
 	}
 }
 
-func Test_mssqlPlugin_registerMetrics(t *testing.T) {
+func Test_nvmlPlugin_registerMetrics(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -140,14 +140,14 @@ func Test_mssqlPlugin_registerMetrics(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			tt := tt
 			t.Parallel()
 
 			err := (&nvmlPlugin{}).registerMetrics()
 			if (err != nil) != tt.wantErr {
 				t.Fatalf(
-					"mssqlPlugin.registerMetrics() error = %v, wantErr %v",
+					"nvmlPlugin.registerMetrics() error = %v, wantErr %v",
 					err, tt.wantErr,
 				)
 			}
@@ -156,8 +156,6 @@ func Test_mssqlPlugin_registerMetrics(t *testing.T) {
 }
 
 func Test_nvmlPlugin_Stop(t *testing.T) {
-	t.Parallel()
-
 	log.DefaultLogger = stdlog.New(os.Stdout, "", stdlog.LstdFlags)
 
 	type fields struct {
@@ -177,7 +175,7 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 			},
 		},
 		{
-			"-invalid",
+			"-nvmlRunnerShutdownNVMLError",
 			fields{
 				[]*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("ShutdownNVML").ProvideError(nvml.ErrNotFound),
@@ -189,8 +187,6 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
 
 			p := &nvmlPlugin{
@@ -203,15 +199,13 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 
 			done := runner.ExpectedCallsDone()
 			if !done {
-				t.Fatal("Expected calls not done")
+				t.Fatal("nvmlPlugin.Stop() expected calls not done")
 			}
 		})
 	}
 }
 
 func Test_nvmlPlugin_Start(t *testing.T) {
-	t.Parallel()
-
 	log.DefaultLogger = stdlog.New(os.Stdout, "", stdlog.LstdFlags)
 
 	type fields struct {
@@ -251,7 +245,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 			},
 		},
 		{
-			"-invalid",
+			"-nvmlInitError",
 			fields{
 				[]*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("InitV2").ProvideError(nvml.ErrFunctionNotFound),
@@ -267,8 +261,6 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
 
 			p := &nvmlPlugin{
@@ -280,11 +272,11 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 			defer func() {
 				r := recover()
 				if tt.expect.shouldPanic && r == nil {
-					t.Fatalf("Expected panic did not occur")
+					t.Fatalf("nvmlPlugin.Start() expected panic did not occur")
 				}
 
 				if !tt.expect.shouldPanic && r != nil {
-					t.Fatalf("Unecpected panic occurred")
+					t.Fatalf("nvmlPlugin.Start() unecpected panic occurred")
 				}
 			}()
 
@@ -292,7 +284,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 
 			done := runner.ExpectedCallsDone()
 			if !done {
-				t.Fatal("Expected calls not done")
+				t.Fatal("nvmlPlugin.Start() expected calls not done")
 			}
 		})
 	}

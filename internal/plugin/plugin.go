@@ -18,10 +18,8 @@ import (
 	"golang.zabbix.com/sdk/zbxerr"
 )
 
-const (
-	// Name of the plugin.
-	Name = "NVIDIA"
-)
+// Name of the plugin.
+const Name = "NVIDIA"
 
 var (
 	_ plugin.Configurator = (*nvmlPlugin)(nil)
@@ -29,7 +27,7 @@ var (
 	_ plugin.Runner       = (*nvmlPlugin)(nil)
 )
 
-type exampleMetric struct {
+type nvmlMetric struct {
 	metric  *metric.Metric
 	handler handlers.HandlerFunc
 }
@@ -37,16 +35,16 @@ type exampleMetric struct {
 type nvmlPlugin struct {
 	plugin.Base
 	config     *pluginConfig
-	metrics    map[string]*exampleMetric
+	metrics    map[string]*nvmlMetric
 	nvmlRunner nvml.Runner
 }
 
-// Launch launches the Example plugin. Blocks until plugin execution has
+// Launch launches the NVIDIA plugin. Blocks until plugin execution has
 // finished.
 func Launch() error {
 	runner, err := nvml.NewNVMLRunner()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "failed to create new nvml runner")
 	}
 
 	p := &nvmlPlugin{
@@ -63,6 +61,8 @@ func Launch() error {
 		return errs.Wrap(err, "failed to create new handler")
 	}
 
+	defer p.nvmlRunner.Close() //nolint:errcheck
+
 	p.Logger = h
 
 	err = h.Execute()
@@ -70,15 +70,10 @@ func Launch() error {
 		return errs.Wrap(err, "failed to execute plugin handler")
 	}
 
-	err = p.nvmlRunner.Close()
-	if err != nil {
-		return errs.Wrap(err, "failed to close nvml")
-	}
-
 	return nil
 }
 
-// Start starts the example plugin. Is required for plugin to match runner interface.
+// Start starts the NVIDIA plugin. Is required for plugin to match runner interface.
 func (p *nvmlPlugin) Start() {
 	p.Logger.Infof("Start called")
 
@@ -88,26 +83,25 @@ func (p *nvmlPlugin) Start() {
 		return
 	}
 
-	p.Logger.Debugf("failed to init runner with InitNVMLv2: %v", err)
+	p.Logger.Debugf("failed to init runner with InitNVMLv2: %s", err.Error())
 
 	// Fallback to Init if InitV2 fails
 	err = p.nvmlRunner.Init()
 	if err != nil {
 		wrappedErr := errs.Wrap(err, "failed to init NVML library")
-		p.Logger.Errf("%v", wrappedErr)
+		p.Logger.Errf("%s", wrappedErr.Error())
 		panic(wrappedErr)
 	}
 }
 
-// Stop stops the example plugin. Is required for plugin to match runner interface.
+// Stop stops the NVIDIA plugin. Is required for plugin to match runner interface.
 func (p *nvmlPlugin) Stop() {
 	p.Logger.Infof("Stop called")
 
 	err := p.nvmlRunner.ShutdownNVML()
 	if err != nil {
-		p.Logger.Errf("failed to shutdown nvml %v", err)
+		p.Logger.Errf("failed to shutdown nvml %s", err.Error())
 	}
-
 }
 
 // Export collects all the metrics.
@@ -148,7 +142,7 @@ func (p *nvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.Con
 func (p *nvmlPlugin) registerMetrics() error {
 	handler := handlers.New(p.nvmlRunner)
 
-	p.metrics = map[string]*exampleMetric{
+	p.metrics = map[string]*nvmlMetric{
 		"nvml.version": {
 			metric: metric.New(
 				"Returns local NVML version.",
@@ -159,7 +153,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 		},
 		"nvml.system.driver.version": {
 			metric: metric.New(
-				"Returns local Nvidia driver version.",
+				"Returns local NVIDIA driver version.",
 				nil,
 				false,
 			),

@@ -51,7 +51,7 @@ func TestWithJSONResponse(t *testing.T) {
 			false,
 		},
 		{
-			"-jsonMarshalErr",
+			"-jsonMarshalError",
 			args{
 				value: map[struct{ test string }]string{
 					{test: "1"}: "bar",
@@ -62,7 +62,7 @@ func TestWithJSONResponse(t *testing.T) {
 			true,
 		},
 		{
-			"-handlerErr",
+			"-handlerError",
 			args{gotErr: true},
 			nil,
 			true,
@@ -119,7 +119,7 @@ func TestHandler_DriverVersion(t *testing.T) {
 			false,
 		},
 		{
-			"-invalid",
+			"-nvmlRunnerGetDriverVersionError",
 			expect{
 				expectations: []*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("GetDriverVersion").ProvideOutput("").ProvideError(errors.New("fail")),
@@ -142,7 +142,7 @@ func TestHandler_DriverVersion(t *testing.T) {
 			}
 
 			// Call the method being tested
-			got, err := h.GetDriverVersion(context.TODO(), nil, nil...)
+			got, err := h.GetDriverVersion(context.Background(), nil, nil...)
 
 			// Check for error match
 			if (err != nil) != tt.wantErr {
@@ -155,7 +155,7 @@ func TestHandler_DriverVersion(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.DriverVersion() expected amount of calls not done")
+				t.Fatal("Handler.DriverVersion() expected amount of calls not done")
 			}
 		})
 	}
@@ -278,13 +278,13 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.expectations...)
 
 			h := &Handler{
-				concurrentRuns: 1,
-				nvmlRunner:     runner,
-				deviceCacheMux: &sync.Mutex{},
-				deviceCache:    make(map[string]nvml.Device),
+				concurrentDeviceDiscoverys: 1,
+				nvmlRunner:                 runner,
+				deviceCacheMux:             &sync.Mutex{},
+				deviceCache:                make(map[string]nvml.Device),
 			}
 
-			got, err := h.DeviceDiscovery(context.TODO(), nil, nil...)
+			got, err := h.DeviceDiscovery(context.Background(), nil, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.DeviceDiscovery() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -325,7 +325,7 @@ func TestHandler_GetDeviceCount(t *testing.T) {
 			false,
 		},
 		{
-			"-invalid",
+			"-nvmlRunnerGetDeviceCountV2Error",
 			expect{
 				expectations: []*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("GetDeviceCountV2").ProvideOutput(uint(1)).ProvideError(errors.New("fail")),
@@ -348,7 +348,7 @@ func TestHandler_GetDeviceCount(t *testing.T) {
 			}
 
 			// Call the method being tested
-			got, err := h.GetDeviceCount(context.TODO(), nil, nil...)
+			got, err := h.GetDeviceCount(context.Background(), nil, nil...)
 
 			// Check for error match
 			if (err != nil) != tt.wantErr {
@@ -361,7 +361,7 @@ func TestHandler_GetDeviceCount(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.DriverVersion() expected amount of calls not done")
+				t.Fatal("Handler.DriverVersion() expected amount of calls not done")
 			}
 		})
 	}
@@ -391,7 +391,7 @@ func TestHandler_GetNVMLVersion(t *testing.T) {
 			false,
 		},
 		{
-			"-invalid",
+			"-nvmlRunnerGetNVMLVersionError",
 			expect{
 				expectations: []*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("GetNVMLVersion").ProvideOutput("").ProvideError(errors.New("fail")),
@@ -414,7 +414,7 @@ func TestHandler_GetNVMLVersion(t *testing.T) {
 			}
 
 			// Call the method being tested
-			got, err := h.GetNVMLVersion(context.TODO(), nil, nil...)
+			got, err := h.GetNVMLVersion(context.Background(), nil, nil...)
 
 			// Check for error match
 			if (err != nil) != tt.wantErr {
@@ -427,7 +427,7 @@ func TestHandler_GetNVMLVersion(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.DriverVersion() expected amount of calls not done")
+				t.Fatal("Handler.DriverVersion() expected amount of calls not done")
 			}
 		})
 	}
@@ -511,7 +511,7 @@ func TestHandler_GetDeviceTemperature(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetTemperatureErr",
+			"-nvmlDeviceGetTemperatureError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -551,7 +551,7 @@ func TestHandler_GetDeviceTemperature(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceTemperature(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetDeviceTemperature(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDeviceTemperature() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -561,7 +561,7 @@ func TestHandler_GetDeviceTemperature(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetDeviceTemperature() expected calls not done")
+				t.Fatal("Handler.GetDeviceTemperature() expected calls not done")
 			}
 		})
 	}
@@ -685,7 +685,7 @@ func TestHandler_GetDeviceSerial(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceSerial(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetDeviceSerial(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDeviceSerial() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -695,7 +695,7 @@ func TestHandler_GetDeviceSerial(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetDeviceSerial() expected calls not done")
+				t.Fatal("Handler.GetDeviceSerial() expected calls not done")
 			}
 		})
 	}
@@ -779,7 +779,7 @@ func TestHandler_GetDeviceFanSpeed(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetFanSpeedErr",
+			"-nvmlDeviceGetFanSpeedError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -819,7 +819,7 @@ func TestHandler_GetDeviceFanSpeed(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceFanSpeed(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetDeviceFanSpeed(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDeviceFanSpeed() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -829,7 +829,7 @@ func TestHandler_GetDeviceFanSpeed(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetDeviceFanSpeed() expected calls not done")
+				t.Fatal("Handler.GetDeviceFanSpeed() expected calls not done")
 			}
 		})
 	}
@@ -913,7 +913,7 @@ func TestHandler_GetDevicePerfState(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetPerformanceStateErr",
+			"-nvmlDeviceGetPerformanceStateError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -953,7 +953,7 @@ func TestHandler_GetDevicePerfState(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDevicePerfState(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetDevicePerfState(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDevicePerfState() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -963,7 +963,7 @@ func TestHandler_GetDevicePerfState(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetDevicePerfState() expected calls not done")
+				t.Fatal("Handler.GetDevicePerfState() expected calls not done")
 			}
 		})
 	}
@@ -1047,7 +1047,7 @@ func TestHandler_GetDevicePowerLimit(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetPowerManagementLimitErr",
+			"-nvmlDeviceGetPowerManagementLimitError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -1087,7 +1087,7 @@ func TestHandler_GetDevicePowerLimit(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDevicePowerLimit(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetDevicePowerLimit(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDevicePowerLimit() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1097,7 +1097,7 @@ func TestHandler_GetDevicePowerLimit(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetDevicePowerLimit() expected calls not done")
+				t.Fatal("Handler.GetDevicePowerLimit() expected calls not done")
 			}
 		})
 	}
@@ -1181,7 +1181,7 @@ func TestHandler_GetDevicePowerUsage(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetPowerUsageErr",
+			"-nvmlDeviceGetPowerUsageError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -1221,7 +1221,7 @@ func TestHandler_GetDevicePowerUsage(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDevicePowerUsage(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetDevicePowerUsage(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDevicePowerUsage() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1231,7 +1231,7 @@ func TestHandler_GetDevicePowerUsage(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetDevicePowerUsage() expected calls not done")
+				t.Fatal("Handler.GetDevicePowerUsage() expected calls not done")
 			}
 		})
 	}
@@ -1316,7 +1316,7 @@ func TestHandler_GetVideoFrequency(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetClockInfoErr",
+			"-nvmlDeviceGetClockInfoError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -1357,7 +1357,7 @@ func TestHandler_GetVideoFrequency(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetVideoFrequency(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetVideoFrequency(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetVideoFrequency() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1367,7 +1367,7 @@ func TestHandler_GetVideoFrequency(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetVideoFrequency() expected calls not done")
+				t.Fatal("Handler.GetVideoFrequency() expected calls not done")
 			}
 		})
 	}
@@ -1452,7 +1452,7 @@ func TestHandler_GetGraphicsFrequency(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetClockInfoErr",
+			"-nvmlDeviceGetClockInfoError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -1493,7 +1493,7 @@ func TestHandler_GetGraphicsFrequency(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetGraphicsFrequency(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetGraphicsFrequency(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetGraphicsFrequency() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1503,7 +1503,7 @@ func TestHandler_GetGraphicsFrequency(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetGraphicsFrequency() expected calls not done")
+				t.Fatal("Handler.GetGraphicsFrequency() expected calls not done")
 			}
 		})
 	}
@@ -1588,7 +1588,7 @@ func TestHandler_GetSMFrequency(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetClockInfoErr",
+			"-nvmlDeviceGetClockInfoError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -1629,7 +1629,7 @@ func TestHandler_GetSMFrequency(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetSMFrequency(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetSMFrequency(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetSMFrequency() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1639,7 +1639,7 @@ func TestHandler_GetSMFrequency(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetSMFrequency() expected calls not done")
+				t.Fatal("Handler.GetSMFrequency() expected calls not done")
 			}
 		})
 	}
@@ -1724,7 +1724,7 @@ func TestHandler_GetMemoryFrequency(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetClockInfoErr",
+			"-nvmlDeviceGetClockInfoError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -1765,7 +1765,7 @@ func TestHandler_GetMemoryFrequency(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetMemoryFrequency(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetMemoryFrequency(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetMemoryFrequency() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1775,7 +1775,7 @@ func TestHandler_GetMemoryFrequency(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetMemoryFrequency() expected calls not done")
+				t.Fatal("Handler.GetMemoryFrequency() expected calls not done")
 			}
 		})
 	}
@@ -1859,7 +1859,7 @@ func TestHandler_GetDeviceEnergyConsumption(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetTotalEnergyConsumptionErr",
+			"-nvmlDeviceGetTotalEnergyConsumptionError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -1899,7 +1899,7 @@ func TestHandler_GetDeviceEnergyConsumption(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceEnergyConsumption(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetDeviceEnergyConsumption(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDeviceEnergyConsumption() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1909,7 +1909,7 @@ func TestHandler_GetDeviceEnergyConsumption(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetDeviceEnergyConsumption() expected calls not done")
+				t.Fatal("Handler.GetDeviceEnergyConsumption() expected calls not done")
 			}
 		})
 	}
@@ -1993,7 +1993,7 @@ func TestHandler_GetDeviceUtilisation(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetUtilizationRatesErr",
+			"-nvmlDeviceGetUtilizationRatesError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -2033,7 +2033,7 @@ func TestHandler_GetDeviceUtilisation(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceUtilisation(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetDeviceUtilisation(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetUtilizationRates() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2043,7 +2043,7 @@ func TestHandler_GetDeviceUtilisation(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetUtilizationRates() expected calls not done")
+				t.Fatal("Handler.GetUtilizationRates() expected calls not done")
 			}
 		})
 	}
@@ -2215,7 +2215,7 @@ func TestHandler_GetMemoryErrors(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetMemoryErrors(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetMemoryErrors(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetMemoryErrors() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2225,7 +2225,7 @@ func TestHandler_GetMemoryErrors(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetMemoryErrors() expected calls not done")
+				t.Fatal("Handler.GetMemoryErrors() expected calls not done")
 			}
 		})
 	}
@@ -2397,7 +2397,7 @@ func TestHandler_GetRegistryErrors(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetRegistryErrors(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetRegistryErrors(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetRegistryErrors() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2407,7 +2407,7 @@ func TestHandler_GetRegistryErrors(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetRegistryErrors() expected calls not done")
+				t.Fatal("Handler.GetRegistryErrors() expected calls not done")
 			}
 		})
 	}
@@ -2491,7 +2491,7 @@ func TestHandler_GetEncoderUtilization(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetEncoderUtilizationErr",
+			"-nvmlDeviceGetEncoderUtilizationError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -2531,7 +2531,7 @@ func TestHandler_GetEncoderUtilization(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetEncoderUtilization(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetEncoderUtilization(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetEncoderUtilization() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2541,7 +2541,7 @@ func TestHandler_GetEncoderUtilization(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetEncoderUtilization() expected calls not done")
+				t.Fatal("Handler.GetEncoderUtilization() expected calls not done")
 			}
 		})
 	}
@@ -2625,7 +2625,7 @@ func TestHandler_GetDecoderUtilization(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetDecoderUtilizationErr",
+			"-nvmlDeviceGetDecoderUtilizationError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -2665,7 +2665,7 @@ func TestHandler_GetDecoderUtilization(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDecoderUtilization(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetDecoderUtilization(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDecoderUtilization() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2675,7 +2675,7 @@ func TestHandler_GetDecoderUtilization(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetDecoderUtilization() expected calls not done")
+				t.Fatal("Handler.GetDecoderUtilization() expected calls not done")
 			}
 		})
 	}
@@ -2726,7 +2726,7 @@ func TestHandler_GetECCMode(t *testing.T) {
 					params.DeviceUUIDParamName: "test-uuid",
 				},
 			},
-			ECCMode{Currect: true, Pending: false},
+			ECCMode{Current: true, Pending: false},
 			false,
 		},
 		{
@@ -2759,7 +2759,7 @@ func TestHandler_GetECCMode(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetEccModeErr",
+			"-nvmlDeviceGetEccModeError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -2799,7 +2799,7 @@ func TestHandler_GetECCMode(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetECCMode(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetECCMode(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetECCMode() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2809,7 +2809,7 @@ func TestHandler_GetECCMode(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetECCMode() expected calls not done")
+				t.Fatal("Handler.GetECCMode() expected calls not done")
 			}
 		})
 	}
@@ -2966,7 +2966,7 @@ func TestHandler_GetPCIeThroughput(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetPCIeThroughput(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetPCIeThroughput(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetPCIeThroughput() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2976,7 +2976,7 @@ func TestHandler_GetPCIeThroughput(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetPCIeThroughput() expected calls not done")
+				t.Fatal("Handler.GetPCIeThroughput() expected calls not done")
 			}
 		})
 	}
@@ -3070,7 +3070,7 @@ func TestHandler_GetFBMemoryInfo(t *testing.T) {
 			true,
 		},
 		{
-			name: "-nvmlGetMemoryInfoV2Err",
+			name: "-nvmlDeviceGetMemoryInfoV2Error",
 			expect: expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -3115,7 +3115,7 @@ func TestHandler_GetFBMemoryInfo(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetFBMemoryInfo(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetFBMemoryInfo(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetFBMemoryInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -3125,7 +3125,7 @@ func TestHandler_GetFBMemoryInfo(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetFBMemoryInfo() expected calls not done")
+				t.Fatal("Handler.GetFBMemoryInfo() expected calls not done")
 			}
 		})
 	}
@@ -3217,7 +3217,7 @@ func TestHandler_GetBAR1MemoryInfo(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetBAR1MemoryInfoErr",
+			"-nvmlDeviceGetBAR1MemoryInfoError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -3261,7 +3261,7 @@ func TestHandler_GetBAR1MemoryInfo(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetBAR1MemoryInfo(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetBAR1MemoryInfo(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetBAR1MemoryInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -3271,7 +3271,7 @@ func TestHandler_GetBAR1MemoryInfo(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetBAR1MemoryInfo() expected calls not done")
+				t.Fatal("Handler.GetBAR1MemoryInfo() expected calls not done")
 			}
 		})
 	}
@@ -3359,7 +3359,7 @@ func TestHandler_GetEncoderStats(t *testing.T) {
 			true,
 		},
 		{
-			"-nvmlGetEncoderStatsErr",
+			"-nvmlDeviceGetEncoderStatsError",
 			expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -3399,7 +3399,7 @@ func TestHandler_GetEncoderStats(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetEncoderStats(context.TODO(), tt.args.metricParams, nil...)
+			got, err := h.GetEncoderStats(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetEncoderStats() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -3409,7 +3409,7 @@ func TestHandler_GetEncoderStats(t *testing.T) {
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatalf("Handler.GetEncoderStats() expected calls not done")
+				t.Fatal("Handler.GetEncoderStats() expected calls not done")
 			}
 		})
 	}
@@ -3423,15 +3423,15 @@ func TestNew(t *testing.T) {
 	h := New(runner)
 
 	if h.nvmlRunner != runner {
-		t.Fatalf("New() runner not as expected")
+		t.Fatal("New() runner not as expected")
 	}
 
 	if h.deviceCache == nil {
-		t.Fatalf("New() device cache not set")
+		t.Fatal("New() device cache not set")
 	}
 
 	if h.deviceCacheMux == nil {
-		t.Fatalf("New() device cache mutex not set")
+		t.Fatal("New() device cache mutex not set")
 	}
 }
 
