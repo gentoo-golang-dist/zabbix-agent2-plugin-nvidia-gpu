@@ -14,7 +14,7 @@
 **   limitations under the License.
 **/
 
-package nvml
+package nvml //nolint:gocritic
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/nvml-sdk/include

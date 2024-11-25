@@ -22,12 +22,12 @@ package nvml
 
 #include "nvml.h"
 */
-import "C"
+import "C" //nolint:gocritic
 import (
 	"errors"
 	"sync"
 	"syscall"
-	"unsafe"
+	"unsafe" //nolint:gocritic
 
 	"golang.org/x/sys/windows"
 	"golang.zabbix.com/sdk/errs"
@@ -144,6 +144,8 @@ func (runner *NVMLRunner) GetDeviceCount() (uint, error) {
 }
 
 // GetDeviceByIndexV2 retrieves a handle to an NVIDIA device by its index using the NVML v2 interface.
+//
+//nolint:ireturn
 func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (Device, error) {
 	var deviceHandle uintptr
 
@@ -164,6 +166,8 @@ func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (Device, error) {
 }
 
 // GetDeviceByUUID retrieves a handle to an NVIDIA device by its UUID.
+//
+//nolint:ireturn
 func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (Device, error) {
 	var deviceHandle uintptr
 
