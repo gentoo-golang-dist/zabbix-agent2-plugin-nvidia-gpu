@@ -16,7 +16,6 @@ var (
 	// Params groups all base parameters common for all connections.
 	Params = []*metric.Param{DeviceUUID}
 
-	// DeviceUUID is device uuid parameter.
-	DeviceUUID = metric.NewConnParam(DeviceUUIDParamName, "Example parameter mimics a password.").
-			WithDefault("").SetRequired()
+	// DeviceUUID is device UUID parameter.
+	DeviceUUID = metric.NewParam(DeviceUUIDParamName, "Device UUID to get information from.").SetRequired()
 )
