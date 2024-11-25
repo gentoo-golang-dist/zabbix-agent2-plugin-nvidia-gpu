@@ -44,23 +44,29 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 		metric.NewConnParam("default", "Test default.").WithDefault("default"),
 	}
 
+	type fields struct {
+		returnErr bool
+	}
+
 	type args struct {
 		key       string
-		wantErr   bool
 		rawParams []string
 	}
 
 	tests := []struct {
 		name    string
+		fields  fields
 		args    args
 		want    any
 		wantErr bool
 	}{
 		{
 			"+valid",
+			fields{
+				returnErr: false,
+			},
 			args{
 				key:       "test",
-				wantErr:   false,
 				rawParams: []string{},
 			},
 			"success",
@@ -68,9 +74,11 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 		},
 		{
 			"-handlerErr",
+			fields{
+				returnErr: true,
+			},
 			args{
 				key:       "test",
-				wantErr:   true,
 				rawParams: []string{},
 			},
 			nil,
@@ -78,6 +86,9 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 		},
 		{
 			"-metricNotFound",
+			fields{
+				returnErr: false,
+			},
 			args{
 				key:       "invalid",
 				rawParams: []string{},
@@ -87,6 +98,9 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 		},
 		{
 			"-invalidParams",
+			fields{
+				returnErr: false,
+			},
 			args{
 				key:       "test",
 				rawParams: []string{"one", "two", "three", "four"},
@@ -108,7 +122,7 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 						handler: func(
 							ctx context.Context, metricParams map[string]string, extraParams ...string,
 						) (any, error) {
-							if tt.args.wantErr {
+							if tt.fields.returnErr {
 								return "", errs.New("fail")
 							}
 
