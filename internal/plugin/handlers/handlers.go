@@ -93,17 +93,6 @@ type ECCMode struct {
 	Pending bool `json:"pending"`
 }
 
-// New creates a new handler with initialized clients for system and tcp calls.
-func New(nvmlRunner nvml.Runner) *Handler {
-	return &Handler{
-		// negative indicates no limit
-		concurrentDeviceDiscoverys: -1,
-		nvmlRunner:                 nvmlRunner,
-		deviceCacheMux:             &sync.Mutex{},
-		deviceCache:                make(map[string]nvml.Device),
-	}
-}
-
 // GetNVMLVersion returns local NVML version.
 func (h *Handler) GetNVMLVersion(_ context.Context, _ map[string]string, _ ...string) (any, error) {
 	version, err := h.nvmlRunner.GetNVMLVersion()
@@ -466,26 +455,6 @@ func (h *Handler) GetRegistryErrors(_ context.Context, metricParams map[string]s
 	return ecc, nil
 }
 
-// WithJSONResponse wraps a handler function, marshaling its response
-// to a JSON object and returning it as string.
-func WithJSONResponse(handler HandlerFunc) HandlerFunc {
-	return func(
-		ctx context.Context, metricParams map[string]string, extraParams ...string,
-	) (any, error) {
-		res, err := handler(ctx, metricParams, extraParams...)
-		if err != nil {
-			return nil, errs.Wrap(err, "failed to receive the result")
-		}
-
-		jsonRes, err := json.Marshal(res)
-		if err != nil {
-			return nil, errs.Wrap(err, "failed to marshal result to JSON")
-		}
-
-		return string(jsonRes), nil
-	}
-}
-
 // GetPCIeThroughput retrieves the PCIe receive and transmit throughput for the NVIDIA device in KB/s.
 func (h *Handler) GetPCIeThroughput(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
@@ -711,6 +680,37 @@ func (h *Handler) GetECCMode(_ context.Context, metricParams map[string]string, 
 	}
 
 	return mode, nil
+}
+
+// WithJSONResponse wraps a handler function, marshaling its response
+// to a JSON object and returning it as string.
+func WithJSONResponse(handler HandlerFunc) HandlerFunc {
+	return func(
+		ctx context.Context, metricParams map[string]string, extraParams ...string,
+	) (any, error) {
+		res, err := handler(ctx, metricParams, extraParams...)
+		if err != nil {
+			return nil, errs.Wrap(err, "failed to receive the result")
+		}
+
+		jsonRes, err := json.Marshal(res)
+		if err != nil {
+			return nil, errs.Wrap(err, "failed to marshal result to JSON")
+		}
+
+		return string(jsonRes), nil
+	}
+}
+
+// New creates a new handler with initialized clients for system and tcp calls.
+func New(nvmlRunner nvml.Runner) *Handler {
+	return &Handler{
+		// negative indicates no limit
+		concurrentDeviceDiscoverys: -1,
+		nvmlRunner:                 nvmlRunner,
+		deviceCacheMux:             &sync.Mutex{},
+		deviceCache:                make(map[string]nvml.Device),
+	}
 }
 
 // getDeviceByUUID accesses devices from device cache of runner,

@@ -17,54 +17,37 @@ import (
 	"golang.zabbix.com/sdk/errs"
 )
 
-func TestWithJSONResponse(t *testing.T) {
+func TestHandler_GetNVMLVersion(t *testing.T) {
 	t.Parallel()
 
-	type args struct {
-		value  any
-		gotErr bool
+	type expect struct {
+		expectations []*nvmlmock.Expectation
 	}
 
 	tests := []struct {
 		name    string
-		args    args
+		expect  expect
 		want    any
 		wantErr bool
 	}{
 		{
 			"+valid",
-			args{
-				value: "foobar",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetNVMLVersion").ProvideOutput("Mock NVML Version"),
+				},
 			},
-			`"foobar"`,
+			"Mock NVML Version",
 			false,
 		},
 		{
-			"+jsonObject",
-			args{
-				value: map[string]string{
-					"foo":  "bar",
-					"test": "true",
+			"-nvmlRunnerGetNVMLVersionError",
+			expect{
+				expectations: []*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("GetNVMLVersion").ProvideOutput("").ProvideError(errors.New("fail")),
 				},
 			},
-			`{"foo":"bar","test":"true"}`,
-			false,
-		},
-		{
-			"-jsonMarshalError",
-			args{
-				value: map[struct{ test string }]string{
-					{test: "1"}: "bar",
-					{test: "2"}: "foo",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-handlerError",
-			args{gotErr: true},
-			nil,
+			"",
 			true,
 		},
 	}
@@ -74,28 +57,33 @@ func TestWithJSONResponse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := WithJSONResponse(
-				func(ctx context.Context, metricParams map[string]string, extraParams ...string) (any, error) {
-					if tt.args.gotErr {
-						return nil, errs.New("fail")
-					}
-
-					return tt.args.value, nil
-				},
-			)(context.Background(), nil)
-
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("WithJSONResponse() error = %v, wantErr %v", err, tt.wantErr)
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.expectations...)
+			// Initialize Handler with the mocked nvmlRunner
+			h := &Handler{
+				nvmlRunner: runner,
 			}
 
+			// Call the method being tested
+			got, err := h.GetNVMLVersion(context.Background(), nil, nil...)
+
+			// Check for error match
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.DriverVersion() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// Check for result match
 			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("WithJSONResponse() = %s", diff)
+				t.Fatalf("Handler.DriverVersion() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Handler.DriverVersion() expected amount of calls not done")
 			}
 		})
 	}
 }
 
-func TestHandler_DriverVersion(t *testing.T) {
+func TestHandler_GetDriverVersion(t *testing.T) {
 	t.Parallel()
 
 	type expect struct {
@@ -349,72 +337,6 @@ func TestHandler_GetDeviceCount(t *testing.T) {
 
 			// Call the method being tested
 			got, err := h.GetDeviceCount(context.Background(), nil, nil...)
-
-			// Check for error match
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.DriverVersion() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			// Check for result match
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.DriverVersion() = %s", diff)
-			}
-
-			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.DriverVersion() expected amount of calls not done")
-			}
-		})
-	}
-}
-
-func TestHandler_GetNVMLVersion(t *testing.T) {
-	t.Parallel()
-
-	type expect struct {
-		expectations []*nvmlmock.Expectation
-	}
-
-	tests := []struct {
-		name    string
-		expect  expect
-		want    any
-		wantErr bool
-	}{
-		{
-			"+valid",
-			expect{
-				expectations: []*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("GetNVMLVersion").ProvideOutput("Mock NVML Version"),
-				},
-			},
-			"Mock NVML Version",
-			false,
-		},
-		{
-			"-nvmlRunnerGetNVMLVersionError",
-			expect{
-				expectations: []*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("GetNVMLVersion").ProvideOutput("").ProvideError(errors.New("fail")),
-				},
-			},
-			"",
-			true,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.expectations...)
-			// Initialize Handler with the mocked nvmlRunner
-			h := &Handler{
-				nvmlRunner: runner,
-			}
-
-			// Call the method being tested
-			got, err := h.GetNVMLVersion(context.Background(), nil, nil...)
 
 			// Check for error match
 			if (err != nil) != tt.wantErr {
@@ -969,6 +891,140 @@ func TestHandler_GetDevicePerfState(t *testing.T) {
 	}
 }
 
+func TestHandler_GetDeviceEnergyConsumption(t *testing.T) {
+	t.Parallel()
+
+	type device struct {
+		deviceUUID   string
+		expectations []*nvmlmock.Expectation
+	}
+
+	type expect struct {
+		device device
+	}
+
+	type args struct {
+		metricParams map[string]string
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetTotalEnergyConsumption").
+										ProvideOutput(uint64(55)),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			uint64(55),
+			false,
+		},
+		{
+			"-noInMetricParams",
+			expect{},
+			args{
+				map[string]string{},
+			},
+			nil,
+			true,
+		},
+		{
+			"-deviceNotFound",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(nil).ProvideError(errors.New("fail")),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-nvmlDeviceGetTotalEnergyConsumptionError",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetTotalEnergyConsumption").
+										ProvideOutput(uint64(0)).
+										ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
+			}
+
+			got, err := h.GetDeviceEnergyConsumption(context.Background(), tt.args.metricParams, nil...)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.GetDeviceEnergyConsumption() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.GetDeviceEnergyConsumption() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Handler.GetDeviceEnergyConsumption() expected calls not done")
+			}
+		})
+	}
+}
+
 func TestHandler_GetDevicePowerLimit(t *testing.T) {
 	t.Parallel()
 
@@ -1232,6 +1288,970 @@ func TestHandler_GetDevicePowerUsage(t *testing.T) {
 
 			if !runner.ExpectedCallsDone() {
 				t.Fatal("Handler.GetDevicePowerUsage() expected calls not done")
+			}
+		})
+	}
+}
+
+func TestHandler_GetBAR1MemoryInfo(t *testing.T) {
+	t.Parallel()
+
+	type device struct {
+		deviceUUID   string
+		expectations []*nvmlmock.Expectation
+	}
+
+	type expect struct {
+		device device
+	}
+
+	type args struct {
+		metricParams map[string]string
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetBAR1MemoryInfo").
+										ProvideOutput(&nvml.MemoryInfo{
+											Total: 10,
+											Used:  8,
+											Free:  2,
+										}),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			&nvml.MemoryInfo{
+				Total: 10,
+				Used:  8,
+				Free:  2,
+			},
+			false,
+		},
+		{
+			"-noInMetricParams",
+			expect{},
+			args{
+				map[string]string{},
+			},
+			nil,
+			true,
+		},
+		{
+			"-deviceNotFound",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(nil).ProvideError(errors.New("fail")),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-nvmlDeviceGetBAR1MemoryInfoError",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetBAR1MemoryInfo").
+										ProvideOutput(&nvml.MemoryInfo{
+											Total: 10,
+											Used:  8,
+											Free:  2,
+										}).
+										ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
+			}
+
+			got, err := h.GetBAR1MemoryInfo(context.Background(), tt.args.metricParams, nil...)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.GetBAR1MemoryInfo() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.GetBAR1MemoryInfo() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Handler.GetBAR1MemoryInfo() expected calls not done")
+			}
+		})
+	}
+}
+
+func TestHandler_GetFBMemoryInfo(t *testing.T) {
+	t.Parallel()
+
+	type device struct {
+		deviceUUID   string
+		expectations []*nvmlmock.Expectation
+	}
+
+	type expect struct {
+		device device
+	}
+
+	type args struct {
+		metricParams map[string]string
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetMemoryInfoV2").
+										ProvideOutput(&nvml.MemoryInfoV2{
+											Total:    10,
+											Used:     8,
+											Free:     2,
+											Reserved: 1,
+										}),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			&nvml.MemoryInfoV2{
+				Total:    10,
+				Used:     8,
+				Free:     2,
+				Reserved: 1,
+			},
+			false,
+		},
+		{
+			"-noInMetricParams",
+			expect{},
+			args{
+				map[string]string{},
+			},
+			nil,
+			true,
+		},
+		{
+			"-deviceNotFound",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(nil).ProvideError(errors.New("fail")),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			name: "-nvmlDeviceGetMemoryInfoV2Error",
+			expect: expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetMemoryInfoV2").
+										ProvideOutput(&nvml.MemoryInfoV2{
+											Total:    10,
+											Used:     8,
+											Free:     2,
+											Reserved: 1,
+										}).
+										ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args: args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
+			}
+
+			got, err := h.GetFBMemoryInfo(context.Background(), tt.args.metricParams, nil...)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.GetFBMemoryInfo() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.GetFBMemoryInfo() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Handler.GetFBMemoryInfo() expected calls not done")
+			}
+		})
+	}
+}
+
+func TestHandler_GetMemoryErrors(t *testing.T) {
+	t.Parallel()
+
+	type device struct {
+		deviceUUID   string
+		expectations []*nvmlmock.Expectation
+	}
+
+	type expect struct {
+		device device
+	}
+
+	type args struct {
+		metricParams map[string]string
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeCorrected,
+											nvml.MemoryLocationDevice,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(55)),
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeUncorrected,
+											nvml.MemoryLocationDevice,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(25)),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			ECCErrors{Corrected: 55, Uncorrected: 25},
+			false,
+		},
+		{
+			"-noInMetricParams",
+			expect{},
+			args{
+				map[string]string{},
+			},
+			nil,
+			true,
+		},
+		{
+			"-deviceNotFound",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(nil).ProvideError(errors.New("fail")),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-errorInFirstNVMLResponse",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeCorrected,
+											nvml.MemoryLocationDevice,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(0)).ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-errorInSecondNVMLResponse",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeCorrected,
+											nvml.MemoryLocationDevice,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(55)),
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeUncorrected,
+											nvml.MemoryLocationDevice,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(0)).ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
+			}
+
+			got, err := h.GetMemoryErrors(context.Background(), tt.args.metricParams, nil...)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.GetMemoryErrors() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.GetMemoryErrors() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Handler.GetMemoryErrors() expected calls not done")
+			}
+		})
+	}
+}
+
+func TestHandler_GetRegistryErrors(t *testing.T) {
+	t.Parallel()
+
+	type device struct {
+		deviceUUID   string
+		expectations []*nvmlmock.Expectation
+	}
+
+	type expect struct {
+		device device
+	}
+
+	type args struct {
+		metricParams map[string]string
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeCorrected,
+											nvml.MemoryLocationRegisterFile,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(55)),
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeUncorrected,
+											nvml.MemoryLocationRegisterFile,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(25)),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			ECCErrors{Corrected: 55, Uncorrected: 25},
+			false,
+		},
+		{
+			"-noInMetricParams",
+			expect{},
+			args{
+				map[string]string{},
+			},
+			nil,
+			true,
+		},
+		{
+			"-deviceNotFound",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(nil).ProvideError(errors.New("fail")),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-errorInFirstNVMLGetMemoryErrorCounter",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeCorrected,
+											nvml.MemoryLocationRegisterFile,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(0)).ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-errorInSecondNVMLGetMemoryErrorCounter",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeCorrected,
+											nvml.MemoryLocationRegisterFile,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(55)),
+									nvmlmock.NewExpectation("GetMemoryErrorCounter").
+										WithExpextedArgs(
+											nvml.MemoryErrorTypeUncorrected,
+											nvml.MemoryLocationRegisterFile,
+											nvml.EccCounterTypeAggregate,
+										).ProvideOutput(uint64(0)).ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
+			}
+
+			got, err := h.GetRegistryErrors(context.Background(), tt.args.metricParams, nil...)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.GetRegistryErrors() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.GetRegistryErrors() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Handler.GetRegistryErrors() expected calls not done")
+			}
+		})
+	}
+}
+
+func TestHandler_GetPCIeThroughput(t *testing.T) {
+	t.Parallel()
+
+	type device struct {
+		deviceUUID   string
+		expectations []*nvmlmock.Expectation
+	}
+
+	type expect struct {
+		device device
+	}
+
+	type args struct {
+		metricParams map[string]string
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetPCIeThroughput").
+										WithExpextedArgs(nvml.RX).
+										ProvideOutput(uint(55)),
+									nvmlmock.NewExpectation("GetPCIeThroughput").
+										WithExpextedArgs(nvml.TX).
+										ProvideOutput(uint(25)),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			PCIeUtil{Receive: 55, Transmit: 25},
+			false,
+		},
+		{
+			"-noInMetricParams",
+			expect{},
+			args{
+				map[string]string{},
+			},
+			nil,
+			true,
+		},
+		{
+			"-deviceNotFound",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(nil).ProvideError(errors.New("fail")),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-errorInFirstNVMLGetPCIeThroughput",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetPCIeThroughput").
+										WithExpextedArgs(nvml.RX).
+										ProvideOutput(uint(0)).ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-errorInSecondNVMLGetPCIeThroughput",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetPCIeThroughput").
+										WithExpextedArgs(nvml.RX).
+										ProvideOutput(uint(55)),
+									nvmlmock.NewExpectation("GetPCIeThroughput").
+										WithExpextedArgs(nvml.TX).
+										ProvideOutput(uint(0)).ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
+			}
+
+			got, err := h.GetPCIeThroughput(context.Background(), tt.args.metricParams, nil...)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.GetPCIeThroughput() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.GetPCIeThroughput() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Handler.GetPCIeThroughput() expected calls not done")
+			}
+		})
+	}
+}
+
+func TestHandler_GetEncoderStats(t *testing.T) {
+	t.Parallel()
+
+	type device struct {
+		deviceUUID   string
+		expectations []*nvmlmock.Expectation
+	}
+
+	type expect struct {
+		device device
+	}
+
+	type args struct {
+		metricParams map[string]string
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetEncoderStats").
+										ProvideOutput(uint(1), uint(2), uint(3)),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			EncoderStats{
+				SessionCount: 1,
+				FPS:          2,
+				Latency:      3,
+			},
+			false,
+		},
+		{
+			"-noInMetricParams",
+			expect{},
+			args{
+				map[string]string{},
+			},
+			nil,
+			true,
+		},
+		{
+			"-deviceNotFound",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(nil).ProvideError(errors.New("fail")),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-nvmlDeviceGetEncoderStatsError",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetEncoderStats").
+										ProvideOutput(uint(0), uint(0), uint(0)).
+										ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
+			}
+
+			got, err := h.GetEncoderStats(context.Background(), tt.args.metricParams, nil...)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.GetEncoderStats() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.GetEncoderStats() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Handler.GetEncoderStats() expected calls not done")
 			}
 		})
 	}
@@ -1781,638 +2801,6 @@ func TestHandler_GetMemoryFrequency(t *testing.T) {
 	}
 }
 
-func TestHandler_GetDeviceEnergyConsumption(t *testing.T) {
-	t.Parallel()
-
-	type device struct {
-		deviceUUID   string
-		expectations []*nvmlmock.Expectation
-	}
-
-	type expect struct {
-		device device
-	}
-
-	type args struct {
-		metricParams map[string]string
-	}
-
-	tests := []struct {
-		name    string
-		expect  expect
-		args    args
-		want    any
-		wantErr bool
-	}{
-		{
-			"+valid",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetTotalEnergyConsumption").
-										ProvideOutput(uint64(55)),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			uint64(55),
-			false,
-		},
-		{
-			"-noInMetricParams",
-			expect{},
-			args{
-				map[string]string{},
-			},
-			nil,
-			true,
-		},
-		{
-			"-deviceNotFound",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(nil).ProvideError(errors.New("fail")),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-nvmlDeviceGetTotalEnergyConsumptionError",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetTotalEnergyConsumption").
-										ProvideOutput(uint64(0)).
-										ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
-
-			h := &Handler{
-				nvmlRunner:     runner,
-				deviceCacheMux: &sync.Mutex{},
-				deviceCache:    make(map[string]nvml.Device),
-			}
-
-			got, err := h.GetDeviceEnergyConsumption(context.Background(), tt.args.metricParams, nil...)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.GetDeviceEnergyConsumption() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.GetDeviceEnergyConsumption() = %s", diff)
-			}
-
-			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.GetDeviceEnergyConsumption() expected calls not done")
-			}
-		})
-	}
-}
-
-func TestHandler_GetDeviceUtilisation(t *testing.T) {
-	t.Parallel()
-
-	type device struct {
-		deviceUUID   string
-		expectations []*nvmlmock.Expectation
-	}
-
-	type expect struct {
-		device device
-	}
-
-	type args struct {
-		metricParams map[string]string
-	}
-
-	tests := []struct {
-		name    string
-		expect  expect
-		args    args
-		want    any
-		wantErr bool
-	}{
-		{
-			"+valid",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetUtilizationRates").
-										ProvideOutput(uint(55), uint(99)),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			UtilisationRates{GPU: 55, Memory: 99},
-			false,
-		},
-		{
-			"-noInMetricParams",
-			expect{},
-			args{
-				map[string]string{},
-			},
-			nil,
-			true,
-		},
-		{
-			"-deviceNotFound",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(nil).ProvideError(errors.New("fail")),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-nvmlDeviceGetUtilizationRatesError",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetUtilizationRates").
-										ProvideOutput(uint(0), uint(0)).
-										ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
-
-			h := &Handler{
-				nvmlRunner:     runner,
-				deviceCacheMux: &sync.Mutex{},
-				deviceCache:    make(map[string]nvml.Device),
-			}
-
-			got, err := h.GetDeviceUtilisation(context.Background(), tt.args.metricParams, nil...)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.GetUtilizationRates() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.GetUtilizationRates() = %s", diff)
-			}
-
-			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.GetUtilizationRates() expected calls not done")
-			}
-		})
-	}
-}
-
-func TestHandler_GetMemoryErrors(t *testing.T) {
-	t.Parallel()
-
-	type device struct {
-		deviceUUID   string
-		expectations []*nvmlmock.Expectation
-	}
-
-	type expect struct {
-		device device
-	}
-
-	type args struct {
-		metricParams map[string]string
-	}
-
-	tests := []struct {
-		name    string
-		expect  expect
-		args    args
-		want    any
-		wantErr bool
-	}{
-		{
-			"+valid",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeCorrected,
-											nvml.MemoryLocationDevice,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(55)),
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeUncorrected,
-											nvml.MemoryLocationDevice,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(25)),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			ECCErrors{Corrected: 55, Uncorrected: 25},
-			false,
-		},
-		{
-			"-noInMetricParams",
-			expect{},
-			args{
-				map[string]string{},
-			},
-			nil,
-			true,
-		},
-		{
-			"-deviceNotFound",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(nil).ProvideError(errors.New("fail")),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-errorInFirstNVMLResponse",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeCorrected,
-											nvml.MemoryLocationDevice,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(0)).ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-errorInSecondNVMLResponse",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeCorrected,
-											nvml.MemoryLocationDevice,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(55)),
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeUncorrected,
-											nvml.MemoryLocationDevice,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(0)).ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
-
-			h := &Handler{
-				nvmlRunner:     runner,
-				deviceCacheMux: &sync.Mutex{},
-				deviceCache:    make(map[string]nvml.Device),
-			}
-
-			got, err := h.GetMemoryErrors(context.Background(), tt.args.metricParams, nil...)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.GetMemoryErrors() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.GetMemoryErrors() = %s", diff)
-			}
-
-			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.GetMemoryErrors() expected calls not done")
-			}
-		})
-	}
-}
-
-func TestHandler_GetRegistryErrors(t *testing.T) {
-	t.Parallel()
-
-	type device struct {
-		deviceUUID   string
-		expectations []*nvmlmock.Expectation
-	}
-
-	type expect struct {
-		device device
-	}
-
-	type args struct {
-		metricParams map[string]string
-	}
-
-	tests := []struct {
-		name    string
-		expect  expect
-		args    args
-		want    any
-		wantErr bool
-	}{
-		{
-			"+valid",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeCorrected,
-											nvml.MemoryLocationRegisterFile,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(55)),
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeUncorrected,
-											nvml.MemoryLocationRegisterFile,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(25)),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			ECCErrors{Corrected: 55, Uncorrected: 25},
-			false,
-		},
-		{
-			"-noInMetricParams",
-			expect{},
-			args{
-				map[string]string{},
-			},
-			nil,
-			true,
-		},
-		{
-			"-deviceNotFound",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(nil).ProvideError(errors.New("fail")),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-errorInFirstNVMLResponse",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeCorrected,
-											nvml.MemoryLocationRegisterFile,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(0)).ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-errorInSecondNVMLResponse",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeCorrected,
-											nvml.MemoryLocationRegisterFile,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(55)),
-									nvmlmock.NewExpectation("GetMemoryErrorCounter").
-										WithExpextedArgs(
-											nvml.MemoryErrorTypeUncorrected,
-											nvml.MemoryLocationRegisterFile,
-											nvml.EccCounterTypeAggregate,
-										).ProvideOutput(uint64(0)).ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
-
-			h := &Handler{
-				nvmlRunner:     runner,
-				deviceCacheMux: &sync.Mutex{},
-				deviceCache:    make(map[string]nvml.Device),
-			}
-
-			got, err := h.GetRegistryErrors(context.Background(), tt.args.metricParams, nil...)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.GetRegistryErrors() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.GetRegistryErrors() = %s", diff)
-			}
-
-			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.GetRegistryErrors() expected calls not done")
-			}
-		})
-	}
-}
-
 func TestHandler_GetEncoderUtilization(t *testing.T) {
 	t.Parallel()
 
@@ -2681,6 +3069,140 @@ func TestHandler_GetDecoderUtilization(t *testing.T) {
 	}
 }
 
+func TestHandler_GetDeviceUtilisation(t *testing.T) {
+	t.Parallel()
+
+	type device struct {
+		deviceUUID   string
+		expectations []*nvmlmock.Expectation
+	}
+
+	type expect struct {
+		device device
+	}
+
+	type args struct {
+		metricParams map[string]string
+	}
+
+	tests := []struct {
+		name    string
+		expect  expect
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			"+valid",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetUtilizationRates").
+										ProvideOutput(uint(55), uint(99)),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			UtilisationRates{GPU: 55, Memory: 99},
+			false,
+		},
+		{
+			"-noInMetricParams",
+			expect{},
+			args{
+				map[string]string{},
+			},
+			nil,
+			true,
+		},
+		{
+			"-deviceNotFound",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(nil).ProvideError(errors.New("fail")),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+		{
+			"-nvmlDeviceGetUtilizationRatesError",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetUtilizationRates").
+										ProvideOutput(uint(0), uint(0)).
+										ProvideError(errors.New("fail")),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			nil,
+			true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+
+			h := &Handler{
+				nvmlRunner:     runner,
+				deviceCacheMux: &sync.Mutex{},
+				deviceCache:    make(map[string]nvml.Device),
+			}
+
+			got, err := h.GetDeviceUtilisation(context.Background(), tt.args.metricParams, nil...)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Handler.GetUtilizationRates() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("Handler.GetUtilizationRates() = %s", diff)
+			}
+
+			if !runner.ExpectedCallsDone() {
+				t.Fatal("Handler.GetUtilizationRates() expected calls not done")
+			}
+		})
+	}
+}
+
 func TestHandler_GetECCMode(t *testing.T) {
 	t.Parallel()
 
@@ -2815,139 +3337,53 @@ func TestHandler_GetECCMode(t *testing.T) {
 	}
 }
 
-func TestHandler_GetPCIeThroughput(t *testing.T) {
+func TestWithJSONResponse(t *testing.T) {
 	t.Parallel()
 
-	type device struct {
-		deviceUUID   string
-		expectations []*nvmlmock.Expectation
-	}
-
-	type expect struct {
-		device device
-	}
-
 	type args struct {
-		metricParams map[string]string
+		value  any
+		gotErr bool
 	}
 
 	tests := []struct {
 		name    string
-		expect  expect
 		args    args
 		want    any
 		wantErr bool
 	}{
 		{
 			"+valid",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetPCIeThroughput").
-										WithExpextedArgs(nvml.RX).
-										ProvideOutput(uint(55)),
-									nvmlmock.NewExpectation("GetPCIeThroughput").
-										WithExpextedArgs(nvml.TX).
-										ProvideOutput(uint(25)),
-								),
-							),
-					},
-				},
-			},
 			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
+				value: "foobar",
 			},
-			PCIeUtil{Receive: 55, Transmit: 25},
+			`"foobar"`,
 			false,
 		},
 		{
-			"-noInMetricParams",
-			expect{},
+			"+jsonObject",
 			args{
-				map[string]string{},
-			},
-			nil,
-			true,
-		},
-		{
-			"-deviceNotFound",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(nil).ProvideError(errors.New("fail")),
-					},
+				value: map[string]string{
+					"foo":  "bar",
+					"test": "true",
 				},
 			},
+			`{"foo":"bar","test":"true"}`,
+			false,
+		},
+		{
+			"-jsonMarshalError",
 			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
+				value: map[struct{ test string }]string{
+					{test: "1"}: "bar",
+					{test: "2"}: "foo",
 				},
 			},
 			nil,
 			true,
 		},
 		{
-			"-errorInFirstNVMLResponse",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetPCIeThroughput").
-										WithExpextedArgs(nvml.RX).
-										ProvideOutput(uint(0)).ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-errorInSecondNVMLResponse",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetPCIeThroughput").
-										WithExpextedArgs(nvml.RX).
-										ProvideOutput(uint(55)),
-									nvmlmock.NewExpectation("GetPCIeThroughput").
-										WithExpextedArgs(nvml.TX).
-										ProvideOutput(uint(0)).ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
+			"-handlerError",
+			args{gotErr: true},
 			nil,
 			true,
 		},
@@ -2958,458 +3394,22 @@ func TestHandler_GetPCIeThroughput(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
+			got, err := WithJSONResponse(
+				func(ctx context.Context, metricParams map[string]string, extraParams ...string) (any, error) {
+					if tt.args.gotErr {
+						return nil, errs.New("fail")
+					}
 
-			h := &Handler{
-				nvmlRunner:     runner,
-				deviceCacheMux: &sync.Mutex{},
-				deviceCache:    make(map[string]nvml.Device),
-			}
+					return tt.args.value, nil
+				},
+			)(context.Background(), nil)
 
-			got, err := h.GetPCIeThroughput(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.GetPCIeThroughput() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("WithJSONResponse() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.GetPCIeThroughput() = %s", diff)
-			}
-
-			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.GetPCIeThroughput() expected calls not done")
-			}
-		})
-	}
-}
-
-func TestHandler_GetFBMemoryInfo(t *testing.T) {
-	t.Parallel()
-
-	type device struct {
-		deviceUUID   string
-		expectations []*nvmlmock.Expectation
-	}
-
-	type expect struct {
-		device device
-	}
-
-	type args struct {
-		metricParams map[string]string
-	}
-
-	tests := []struct {
-		name    string
-		expect  expect
-		args    args
-		want    any
-		wantErr bool
-	}{
-		{
-			"+valid",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetMemoryInfoV2").
-										ProvideOutput(&nvml.MemoryInfoV2{
-											Total:    10,
-											Used:     8,
-											Free:     2,
-											Reserved: 1,
-										}),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			&nvml.MemoryInfoV2{
-				Total:    10,
-				Used:     8,
-				Free:     2,
-				Reserved: 1,
-			},
-			false,
-		},
-		{
-			"-noInMetricParams",
-			expect{},
-			args{
-				map[string]string{},
-			},
-			nil,
-			true,
-		},
-		{
-			"-deviceNotFound",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(nil).ProvideError(errors.New("fail")),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			name: "-nvmlDeviceGetMemoryInfoV2Error",
-			expect: expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetMemoryInfoV2").
-										ProvideOutput(&nvml.MemoryInfoV2{
-											Total:    10,
-											Used:     8,
-											Free:     2,
-											Reserved: 1,
-										}).
-										ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args: args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			want:    nil,
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
-
-			h := &Handler{
-				nvmlRunner:     runner,
-				deviceCacheMux: &sync.Mutex{},
-				deviceCache:    make(map[string]nvml.Device),
-			}
-
-			got, err := h.GetFBMemoryInfo(context.Background(), tt.args.metricParams, nil...)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.GetFBMemoryInfo() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.GetFBMemoryInfo() = %s", diff)
-			}
-
-			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.GetFBMemoryInfo() expected calls not done")
-			}
-		})
-	}
-}
-
-func TestHandler_GetBAR1MemoryInfo(t *testing.T) {
-	t.Parallel()
-
-	type device struct {
-		deviceUUID   string
-		expectations []*nvmlmock.Expectation
-	}
-
-	type expect struct {
-		device device
-	}
-
-	type args struct {
-		metricParams map[string]string
-	}
-
-	tests := []struct {
-		name    string
-		expect  expect
-		args    args
-		want    any
-		wantErr bool
-	}{
-		{
-			"+valid",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetBAR1MemoryInfo").
-										ProvideOutput(&nvml.MemoryInfo{
-											Total: 10,
-											Used:  8,
-											Free:  2,
-										}),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			&nvml.MemoryInfo{
-				Total: 10,
-				Used:  8,
-				Free:  2,
-			},
-			false,
-		},
-		{
-			"-noInMetricParams",
-			expect{},
-			args{
-				map[string]string{},
-			},
-			nil,
-			true,
-		},
-		{
-			"-deviceNotFound",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(nil).ProvideError(errors.New("fail")),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-nvmlDeviceGetBAR1MemoryInfoError",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetBAR1MemoryInfo").
-										ProvideOutput(&nvml.MemoryInfo{
-											Total: 10,
-											Used:  8,
-											Free:  2,
-										}).
-										ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
-
-			h := &Handler{
-				nvmlRunner:     runner,
-				deviceCacheMux: &sync.Mutex{},
-				deviceCache:    make(map[string]nvml.Device),
-			}
-
-			got, err := h.GetBAR1MemoryInfo(context.Background(), tt.args.metricParams, nil...)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.GetBAR1MemoryInfo() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.GetBAR1MemoryInfo() = %s", diff)
-			}
-
-			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.GetBAR1MemoryInfo() expected calls not done")
-			}
-		})
-	}
-}
-
-func TestHandler_GetEncoderStats(t *testing.T) {
-	t.Parallel()
-
-	type device struct {
-		deviceUUID   string
-		expectations []*nvmlmock.Expectation
-	}
-
-	type expect struct {
-		device device
-	}
-
-	type args struct {
-		metricParams map[string]string
-	}
-
-	tests := []struct {
-		name    string
-		expect  expect
-		args    args
-		want    any
-		wantErr bool
-	}{
-		{
-			"+valid",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetEncoderStats").
-										ProvideOutput(uint(1), uint(2), uint(3)),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			EncoderStats{
-				SessionCount: 1,
-				FPS:          2,
-				Latency:      3,
-			},
-			false,
-		},
-		{
-			"-noInMetricParams",
-			expect{},
-			args{
-				map[string]string{},
-			},
-			nil,
-			true,
-		},
-		{
-			"-deviceNotFound",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(nil).ProvideError(errors.New("fail")),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-		{
-			"-nvmlDeviceGetEncoderStatsError",
-			expect{
-				device: device{
-					deviceUUID: "test-uuid",
-					expectations: []*nvmlmock.Expectation{
-						nvmlmock.NewExpectation("GetDeviceByUUID").
-							WithExpextedArgs("test-uuid").
-							ProvideOutput(
-								nvmlmock.NewMockDevice(t).ExpectCalls(
-									nvmlmock.NewExpectation("GetEncoderStats").
-										ProvideOutput(uint(0), uint(0), uint(0)).
-										ProvideError(errors.New("fail")),
-								),
-							),
-					},
-				},
-			},
-			args{
-				metricParams: map[string]string{
-					params.DeviceUUIDParamName: "test-uuid",
-				},
-			},
-			nil,
-			true,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.device.expectations...)
-
-			h := &Handler{
-				nvmlRunner:     runner,
-				deviceCacheMux: &sync.Mutex{},
-				deviceCache:    make(map[string]nvml.Device),
-			}
-
-			got, err := h.GetEncoderStats(context.Background(), tt.args.metricParams, nil...)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.GetEncoderStats() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.GetEncoderStats() = %s", diff)
-			}
-
-			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.GetEncoderStats() expected calls not done")
+				t.Fatalf("WithJSONResponse() = %s", diff)
 			}
 		})
 	}

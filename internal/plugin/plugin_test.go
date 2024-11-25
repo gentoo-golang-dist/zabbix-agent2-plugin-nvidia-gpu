@@ -6,9 +6,10 @@ package plugin
 
 import (
 	"context"
-	stdlog "log"
 	"os"
 	"testing"
+
+	stdlog "log"
 
 	"github.com/google/go-cmp/cmp"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
@@ -26,6 +27,12 @@ type MockCtxProvider struct {
 
 func (m *MockCtxProvider) Timeout() int {
 	return m.timeout
+}
+
+func TestMain(m *testing.M) {
+	log.DefaultLogger = stdlog.New(os.Stdout, "", stdlog.LstdFlags)
+	exitVal := m.Run()
+	os.Exit(exitVal)
 }
 
 func Test_nvmlPlugin_Export(t *testing.T) {
@@ -156,7 +163,7 @@ func Test_nvmlPlugin_registerMetrics(t *testing.T) {
 }
 
 func Test_nvmlPlugin_Stop(t *testing.T) {
-	log.DefaultLogger = stdlog.New(os.Stdout, "", stdlog.LstdFlags)
+	t.Parallel()
 
 	type fields struct {
 		runnerExpect []*nvmlmock.Expectation
@@ -187,6 +194,7 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
 
 			p := &nvmlPlugin{
@@ -206,7 +214,7 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 }
 
 func Test_nvmlPlugin_Start(t *testing.T) {
-	log.DefaultLogger = stdlog.New(os.Stdout, "", stdlog.LstdFlags)
+	t.Parallel()
 
 	type fields struct {
 		runnerExpect []*nvmlmock.Expectation
@@ -261,6 +269,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
 
 			p := &nvmlPlugin{

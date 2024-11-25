@@ -69,7 +69,7 @@ func Test_examplePlugin_Configure(t *testing.T) {
 			},
 		},
 		{
-			"-marshalErr",
+			"-unmarshalErr",
 			fields{},
 			args{
 				&plugin.GlobalOptions{Timeout: 3},
@@ -124,7 +124,7 @@ func Test_examplePlugin_Validate(t *testing.T) {
 			false,
 		},
 		{
-			"-marshalErr",
+			"-unmarshalErr",
 			args{
 				[]byte(
 					strings.Join(
