@@ -22,7 +22,7 @@ package nvml
 
 #include "nvml.h"
 */
-import "C" //nolint:gocritic
+import "C" //nolint:gocritic,gci
 import (
 	"errors"
 	"sync"

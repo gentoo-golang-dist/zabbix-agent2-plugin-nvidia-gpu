@@ -28,7 +28,7 @@ package nvml //nolint:gocritic
 #include <dlfcn.h>
 #include <stdlib.h>
 */
-import "C" //nolint:gocritic
+import "C" //nolint:gocritic,gci
 import (
 	"sync"
 	"unsafe" //nolint:gocritic

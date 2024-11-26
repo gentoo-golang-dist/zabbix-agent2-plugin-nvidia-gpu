@@ -729,7 +729,7 @@ func New(nvmlRunner nvml.Runner) *Handler {
 // if device with requested UUID not cached it requests it from NVML.
 // In case of success it caches device for future requests, else returns error.
 //
-//nolint:ireturn
+//nolint:ireturn,nolintlint
 func (h *Handler) getDeviceByUUID(uuid string) (nvml.Device, error) {
 	h.deviceCacheMux.Lock()
 	defer h.deviceCacheMux.Unlock()

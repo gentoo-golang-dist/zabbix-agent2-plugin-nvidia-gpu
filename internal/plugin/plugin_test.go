@@ -18,10 +18,9 @@ package plugin
 
 import (
 	"context"
+	stdlog "log"
 	"os"
 	"testing"
-
-	stdlog "log"
 
 	"github.com/google/go-cmp/cmp"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
