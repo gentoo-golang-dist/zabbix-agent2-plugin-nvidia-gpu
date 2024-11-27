@@ -29,6 +29,26 @@ import (
 	"golang.zabbix.com/sdk/errs"
 )
 
+func TestNew(t *testing.T) {
+	t.Parallel()
+
+	runner := nvmlmock.NewMockRunner(t).ExpectCalls()
+
+	h := New(runner)
+
+	if h.nvmlRunner != runner {
+		t.Fatal("New() runner not as expected")
+	}
+
+	if h.deviceCache == nil {
+		t.Fatal("New() device cache not set")
+	}
+
+	if h.deviceCacheMux == nil {
+		t.Fatal("New() device cache mutex not set")
+	}
+}
+
 func TestHandler_GetNVMLVersion(t *testing.T) {
 	t.Parallel()
 
@@ -278,10 +298,10 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.expect.expectations...)
 
 			h := &Handler{
-				concurrentDeviceDiscoverys: 1,
-				nvmlRunner:                 runner,
-				deviceCacheMux:             &sync.Mutex{},
-				deviceCache:                make(map[string]nvml.Device),
+				concurrentDeviceDiscoveries: 1,
+				nvmlRunner:                  runner,
+				deviceCacheMux:              &sync.Mutex{},
+				deviceCache:                 make(map[string]nvml.Device),
 			}
 
 			got, err := h.DeviceDiscovery(context.Background(), nil, nil...)
@@ -3126,7 +3146,7 @@ func TestHandler_GetDeviceUtilisation(t *testing.T) {
 					params.DeviceUUIDParamName: "test-uuid",
 				},
 			},
-			UtilisationRates{GPU: 55, Memory: 99},
+			UtilisationRates{Device: 55, Memory: 99},
 			false,
 		},
 		{
@@ -3424,26 +3444,6 @@ func TestWithJSONResponse(t *testing.T) {
 				t.Fatalf("WithJSONResponse() = %s", diff)
 			}
 		})
-	}
-}
-
-func TestNew(t *testing.T) {
-	t.Parallel()
-
-	runner := nvmlmock.NewMockRunner(t).ExpectCalls()
-
-	h := New(runner)
-
-	if h.nvmlRunner != runner {
-		t.Fatal("New() runner not as expected")
-	}
-
-	if h.deviceCache == nil {
-		t.Fatal("New() device cache not set")
-	}
-
-	if h.deviceCacheMux == nil {
-		t.Fatal("New() device cache mutex not set")
 	}
 }
 

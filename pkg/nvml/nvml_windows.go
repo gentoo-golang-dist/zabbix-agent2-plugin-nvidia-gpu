@@ -157,12 +157,10 @@ func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (Device, error) {
 		return nil, errs.Wrap(err, "failed while calling procedure")
 	}
 
-	device := &NVMLDevice{
+	return &NVMLDevice{
 		handle: deviceHandle,
 		runner: runner,
-	}
-
-	return device, nil
+	}, nil
 }
 
 // GetDeviceByUUID retrieves a handle to an NVIDIA device by its UUID.
@@ -188,12 +186,10 @@ func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (Device, error) {
 		return nil, errs.Wrap(err, "failed while calling procedure")
 	}
 
-	device := &NVMLDevice{
+	return &NVMLDevice{
 		handle: deviceHandle,
 		runner: runner,
-	}
-
-	return device, nil
+	}, nil
 }
 
 // ShutdownNVML is a wrapper function to cleanly shut down NVML.
@@ -266,14 +262,12 @@ func (device *NVMLDevice) GetMemoryInfoV2() (*MemoryInfoV2, error) {
 		return nil, errs.Wrap(err, "failed while calling procedure")
 	}
 
-	memInfo := &MemoryInfoV2{
+	return &MemoryInfoV2{
 		Total:    uint64(nvmlMemInfo.total),
 		Reserved: uint64(nvmlMemInfo.reserved),
 		Free:     uint64(nvmlMemInfo.free),
 		Used:     uint64(nvmlMemInfo.used),
-	}
-
-	return memInfo, nil
+	}, nil
 }
 
 // GetMemoryInfo retrieves memory information for the NVIDIA device.
@@ -288,13 +282,11 @@ func (device *NVMLDevice) GetMemoryInfo() (*MemoryInfo, error) {
 		return nil, errs.Wrap(err, "failed while calling procedure")
 	}
 
-	info := &MemoryInfo{
+	return &MemoryInfo{
 		Total: uint64(memInfo.total),
 		Free:  uint64(memInfo.free),
 		Used:  uint64(memInfo.used),
-	}
-
-	return info, nil
+	}, nil
 }
 
 // GetBAR1MemoryInfo retrieves BAR1 memory information for the NVIDIA device.
@@ -309,13 +301,11 @@ func (device *NVMLDevice) GetBAR1MemoryInfo() (*MemoryInfo, error) {
 		return nil, errs.Wrap(err, "failed while calling procedure")
 	}
 
-	info := &MemoryInfo{
+	return &MemoryInfo{
 		Total: uint64(memInfo.bar1Total),
 		Free:  uint64(memInfo.bar1Free),
 		Used:  uint64(memInfo.bar1Used),
-	}
-
-	return info, nil
+	}, nil
 }
 
 // GetFanSpeed retrieves the current fan speed of the NVIDIA device as a percentage of its maximum speed.

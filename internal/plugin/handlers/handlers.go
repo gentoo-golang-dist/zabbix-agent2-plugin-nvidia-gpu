@@ -62,10 +62,10 @@ type HandlerFunc func(
 
 // Handler hold client and syscall implementation for request functions.
 type Handler struct {
-	concurrentDeviceDiscoverys int
-	nvmlRunner                 nvml.Runner
-	deviceCacheMux             *sync.Mutex
-	deviceCache                map[string]nvml.Device
+	concurrentDeviceDiscoveries int
+	nvmlRunner                  nvml.Runner
+	deviceCacheMux              *sync.Mutex
+	deviceCache                 map[string]nvml.Device
 }
 
 // DiscoveryDevice holds discovered device data.
@@ -95,7 +95,7 @@ type PCIeUtil struct {
 
 // UtilisationRates holds data about GPU and its Memory utilisation.
 type UtilisationRates struct {
-	GPU    uint `json:"device"`
+	Device uint `json:"device"`
 	Memory uint `json:"memory"`
 }
 
@@ -103,6 +103,17 @@ type UtilisationRates struct {
 type ECCMode struct {
 	Current bool `json:"current"`
 	Pending bool `json:"pending"`
+}
+
+// New creates a new handler with initialized clients for system and tcp calls.
+func New(nvmlRunner nvml.Runner) *Handler {
+	return &Handler{
+		// negative indicates no limit
+		concurrentDeviceDiscoveries: -1,
+		nvmlRunner:                  nvmlRunner,
+		deviceCacheMux:              &sync.Mutex{},
+		deviceCache:                 make(map[string]nvml.Device),
+	}
 }
 
 // GetNVMLVersion returns local NVML version.
@@ -139,7 +150,7 @@ func (h *Handler) DeviceDiscovery(ctx context.Context, _ map[string]string, _ ..
 	)
 
 	group, ctx := errgroup.WithContext(ctx)
-	group.SetLimit(h.concurrentDeviceDiscoverys)
+	group.SetLimit(h.concurrentDeviceDiscoveries)
 
 	// Should be done in parallel
 	for i := uint(0); i < deviceCount; i++ {
@@ -421,12 +432,10 @@ func (h *Handler) GetMemoryErrors(_ context.Context, metricParams map[string]str
 		return nil, errs.Wrap(err, "failed to get uncorrected memory errors")
 	}
 
-	ecc := ECCErrors{
+	return ECCErrors{
 		Corrected:   corrected,
 		Uncorrected: uncorrected,
-	}
-
-	return ecc, nil
+	}, nil
 }
 
 // GetRegistryErrors retrieves the number of corrected and uncorrected ECC errors in registry file.
@@ -459,12 +468,10 @@ func (h *Handler) GetRegistryErrors(_ context.Context, metricParams map[string]s
 		return nil, errs.Wrap(err, "failed to get uncorrected memory errors")
 	}
 
-	ecc := ECCErrors{
+	return ECCErrors{
 		Corrected:   corrected,
 		Uncorrected: uncorrected,
-	}
-
-	return ecc, nil
+	}, nil
 }
 
 // GetPCIeThroughput retrieves the PCIe receive and transmit throughput for the NVIDIA device in KB/s.
@@ -489,12 +496,10 @@ func (h *Handler) GetPCIeThroughput(_ context.Context, metricParams map[string]s
 		return nil, errs.Wrap(err, "failed to get tx throughput")
 	}
 
-	util := PCIeUtil{
+	return PCIeUtil{
 		Receive:  rx,
 		Transmit: tx,
-	}
-
-	return util, nil
+	}, nil
 }
 
 // GetEncoderStats retrieves statistics related to the encoder activity on the device.
@@ -515,13 +520,11 @@ func (h *Handler) GetEncoderStats(_ context.Context, metricParams map[string]str
 		return nil, errs.Wrap(err, "failed to get encoder stats")
 	}
 
-	stats := EncoderStats{
+	return EncoderStats{
 		SessionCount: sessions,
 		FPS:          fps,
 		Latency:      latency,
-	}
-
-	return stats, nil
+	}, nil
 }
 
 // GetVideoFrequency retrieves the clock rate for video encoder/decoder of the NVIDIA device.
@@ -661,12 +664,10 @@ func (h *Handler) GetDeviceUtilisation(_ context.Context, metricParams map[strin
 		return nil, errs.Wrap(err, "failed to get utilisation rates")
 	}
 
-	util := UtilisationRates{
-		GPU:    gpu,
+	return UtilisationRates{
+		Device: gpu,
 		Memory: memory,
-	}
-
-	return util, nil
+	}, nil
 }
 
 // GetECCMode collects data about gpu ECC mode.
@@ -686,12 +687,10 @@ func (h *Handler) GetECCMode(_ context.Context, metricParams map[string]string, 
 		return nil, errs.Wrap(err, "failed getting ecc mode")
 	}
 
-	mode := ECCMode{
+	return ECCMode{
 		Current: current,
 		Pending: pending,
-	}
-
-	return mode, nil
+	}, nil
 }
 
 // WithJSONResponse wraps a handler function, marshaling its response
@@ -711,17 +710,6 @@ func WithJSONResponse(handler HandlerFunc) HandlerFunc {
 		}
 
 		return string(jsonRes), nil
-	}
-}
-
-// New creates a new handler with initialized clients for system and tcp calls.
-func New(nvmlRunner nvml.Runner) *Handler {
-	return &Handler{
-		// negative indicates no limit
-		concurrentDeviceDiscoverys: -1,
-		nvmlRunner:                 nvmlRunner,
-		deviceCacheMux:             &sync.Mutex{},
-		deviceCache:                make(map[string]nvml.Device),
 	}
 }
 
