@@ -522,7 +522,7 @@ func (device *NVMLDevice) GetEncoderStats() (uint, uint, uint, error) {
 		averageLatency C.uint
 	)
 
-	err := device.runner.callProc("nvmlDeviceGetPowerUsage",
+	err := device.runner.callProc("nvmlDeviceGetEncoderStats",
 		device.handle,
 		uintptr(unsafe.Pointer(&sessionCount)),
 		uintptr(unsafe.Pointer(&averageFps)),
