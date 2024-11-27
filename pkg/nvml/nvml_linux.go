@@ -195,12 +195,10 @@ func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (Device, error) {
 		return nil, errs.Wrap(err, "failed to get NVML device handle by index")
 	}
 
-	device := &NVMLDevice{
+	return &NVMLDevice{
 		handle: deviceHandle,
 		runner: runner,
-	}
-
-	return device, nil
+	}, nil
 }
 
 // GetDeviceByUUID retrieves a handle to an NVIDIA device by its UUID.
@@ -224,12 +222,10 @@ func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (Device, error) {
 		return nil, errs.Wrap(err, "failed to get NVML device handle by UUID")
 	}
 
-	device := &NVMLDevice{
+	return &NVMLDevice{
 		handle: deviceHandle,
 		runner: runner,
-	}
-
-	return device, nil
+	}, nil
 }
 
 // GetTemperature retrieves the temperature of the NVIDIA device using the default sensor.
@@ -364,14 +360,12 @@ func (device *NVMLDevice) GetMemoryInfoV2() (*MemoryInfoV2, error) {
 		return nil, errs.Wrap(err, "failed to get NVML device memory info")
 	}
 
-	memoryInfo := &MemoryInfoV2{
+	return &MemoryInfoV2{
 		Total:    uint64(memory.total),
 		Free:     uint64(memory.free),
 		Used:     uint64(memory.used),
 		Reserved: uint64(memory.reserved),
-	}
-
-	return memoryInfo, nil
+	}, nil
 }
 
 // GetBAR1MemoryInfo retrieves BAR1 memory information for the NVIDIA device.
@@ -388,13 +382,11 @@ func (device *NVMLDevice) GetBAR1MemoryInfo() (*MemoryInfo, error) {
 		return nil, errs.Wrap(err, "failed to get NVML BAR1 memory info")
 	}
 
-	memoryInfo := &MemoryInfo{
+	return &MemoryInfo{
 		Total: uint64(memory.bar1Total),
 		Free:  uint64(memory.bar1Free),
 		Used:  uint64(memory.bar1Used),
-	}
-
-	return memoryInfo, nil
+	}, nil
 }
 
 // GetMemoryInfo retrieves memory information for the NVIDIA device.
@@ -411,13 +403,11 @@ func (device *NVMLDevice) GetMemoryInfo() (*MemoryInfo, error) {
 		return nil, errs.Wrap(err, "failed to get NVML device memory info")
 	}
 
-	memoryInfo := &MemoryInfo{
+	return &MemoryInfo{
 		Total: uint64(memory.total),
 		Free:  uint64(memory.free),
 		Used:  uint64(memory.used),
-	}
-
-	return memoryInfo, nil
+	}, nil
 }
 
 // GetPCIeThroughput retrieves the PCIe throughput for the NVIDIA device, based on the specified metric type.
