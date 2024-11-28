@@ -1970,15 +1970,15 @@ func TestHandler_GetRegistryErrors(t *testing.T) {
 
 			got, err := h.GetRegisterErrors(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("Handler.GetRegistryErrors() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("Handler.GetRegisterErrors() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("Handler.GetRegistryErrors() = %s", diff)
+				t.Fatalf("Handler.GetRegisterErrors() = %s", diff)
 			}
 
 			if !runner.ExpectedCallsDone() {
-				t.Fatal("Handler.GetRegistryErrors() expected calls not done")
+				t.Fatal("Handler.GetRegisterErrors() expected calls not done")
 			}
 		})
 	}
