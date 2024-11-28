@@ -100,10 +100,10 @@ To configure plugins, use the Zabbix Agent configuration file.
   1. **`corrected`**: Count of ECC errors that were corrected in memory.  
   2. **`uncorrected`**: Count of ECC errors that could not be corrected in memory.
 
-- **`nvml.device.errors.registry[<deviceUUID>]`**  
+- **`nvml.device.errors.register[<deviceUUID>]`**  
   Returns a JSON structure with the following fields:  
-  1. **`corrected`**: Count of ECC errors that were corrected in registry file.  
-  2. **`uncorrected`**: Count of ECC errors that could not be corrected in registry file.
+  1. **`corrected`**: Count of ECC errors that were corrected in register file.  
+  2. **`uncorrected`**: Count of ECC errors that could not be corrected in register file.
 
 ## Device PCI Metrics
 - **`nvml.device.pci.utilization[<deviceUUID>]`**  

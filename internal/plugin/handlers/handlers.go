@@ -48,7 +48,7 @@ var (
 	_ HandlerFunc = (*Handler)(nil).GetMemoryErrors
 	_ HandlerFunc = (*Handler)(nil).GetMemoryFrequency
 	_ HandlerFunc = (*Handler)(nil).GetPCIeThroughput
-	_ HandlerFunc = (*Handler)(nil).GetRegistryErrors
+	_ HandlerFunc = (*Handler)(nil).GetRegisterErrors
 	_ HandlerFunc = (*Handler)(nil).GetVideoFrequency
 	_ HandlerFunc = (*Handler)(nil).GetSMFrequency
 )
@@ -438,8 +438,8 @@ func (h *Handler) GetMemoryErrors(_ context.Context, metricParams map[string]str
 	}, nil
 }
 
-// GetRegistryErrors retrieves the number of corrected and uncorrected ECC errors in registry file.
-func (h *Handler) GetRegistryErrors(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+// GetRegistryErrors retrieves the number of corrected and uncorrected ECC errors in register file.
+func (h *Handler) GetRegisterErrors(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")

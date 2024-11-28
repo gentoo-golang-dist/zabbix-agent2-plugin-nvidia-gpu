@@ -273,14 +273,14 @@ func (p *nvmlPlugin) registerMetrics() error {
 				handler.GetMemoryErrors,
 			),
 		},
-		"nvml.device.errors.registry": {
+		"nvml.device.errors.register": {
 			metric: metric.New(
-				"Returns ECC error count in registry file.",
+				"Returns ECC error count in register file.",
 				params.Params,
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.GetRegistryErrors,
+				handler.GetRegisterErrors,
 			),
 		},
 		"nvml.device.pci.utilization": {

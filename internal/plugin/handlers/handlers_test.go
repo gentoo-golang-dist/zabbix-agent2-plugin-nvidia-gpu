@@ -1968,7 +1968,7 @@ func TestHandler_GetRegistryErrors(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetRegistryErrors(context.Background(), tt.args.metricParams, nil...)
+			got, err := h.GetRegisterErrors(context.Background(), tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetRegistryErrors() error = %v, wantErr %v", err, tt.wantErr)
 			}
