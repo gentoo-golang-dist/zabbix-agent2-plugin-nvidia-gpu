@@ -50,35 +50,35 @@ To configure plugins, use the Zabbix Agent configuration file.
   Returns a single value: (unsigned int) number of devices.
 
 ## General Device Metrics
-- **`nvml.device.temperature[<device_uuid>]`**  
+- **`nvml.device.temperature[<deviceUUID>]`**  
   Returns a single value: (unsigned int) temperature of the device in Celsius.
 
-- **`nvml.device.serial[<device_uuid>]`**  
+- **`nvml.device.serial[<deviceUUID>]`**  
   Returns a single value: (unsigned int) number of devices.
 
-- **`nvml.device.fan.speed.avg[<device_uuid>]`**  
+- **`nvml.device.fan.speed.avg[<deviceUUID>]`**  
   Returns a single value: (unsigned int) average fan speed as a percentage of maximum speed.
 
-- **`nvml.device.performance.state[<device_uuid>]`**  
+- **`nvml.device.performance.state[<deviceUUID>]`**  
   Returns a single value: (unsigned int) performance state of the device (0 = max, 15 = min).
 
-- **`nvml.device.energy.consumption[<device_uuid>]`**  
+- **`nvml.device.energy.consumption[<deviceUUID>]`**  
   Returns a single value: (unsigned int) total energy consumption in millijoules (mJ) since the driver was last reloaded.
 
-- **`nvml.device.power.limit[<device_uuid>]`**  
+- **`nvml.device.power.limit[<deviceUUID>]`**  
   Returns a single value: (unsigned int) power limit in milliwatts.
 
-- **`nvml.device.power.usage[<device_uuid>]`**  
+- **`nvml.device.power.usage[<deviceUUID>]`**  
   Returns a single value: (unsigned int) current power usage in milliwatts.
 
 ## Device Memory Metrics
-- **`nvml.device.memory.bar1.get[<device_uuid>]`**  
+- **`nvml.device.memory.bar1.get[<deviceUUID>]`**  
   Returns a JSON structure with the following fields (in bytes):  
   1. **`total_memory_bytes`**: Total BAR1 memory available on the GPU.  
   2. **`used_memory_bytes`**: BAR1 memory currently in use.  
   3. **`free_memory_bytes`**: Available BAR1 memory.
 
-- **`nvml.device.memory.fb.get[<device_uuid>]`**  
+- **`nvml.device.memory.fb.get[<deviceUUID>]`**  
   Returns a JSON structure with the following fields (in bytes):  
   1. **`total_memory_bytes`**: Total framebuffer memory of the GPU.  
   2. **`reserved_memory_bytes`**: Memory reserved for internal GPU operations.  
@@ -89,56 +89,56 @@ To configure plugins, use the Zabbix Agent configuration file.
 - Reserved memory is included in the used memory.
 
 ## Device ECC Mode
-- **`nvml.device.ecc.mode[<device_uuid>]`**  
+- **`nvml.device.ecc.mode[<deviceUUID>]`**  
   Returns a JSON structure with the following fields:  
   1. **`current`**: The current ECC mode (bool).  
   2. **`pending`**: The pending ECC mode (bool) to be applied after reboot.
 
 ## Device ECC Error Metrics
-- **`nvml.device.errors.memory[<device_uuid>]`**  
+- **`nvml.device.errors.memory[<deviceUUID>]`**  
   Returns a JSON structure with the following fields:  
   1. **`corrected`**: Count of ECC errors that were corrected in memory.  
   2. **`uncorrected`**: Count of ECC errors that could not be corrected in memory.
 
-- **`nvml.device.errors.registry[<device_uuid>]`**  
+- **`nvml.device.errors.registry[<deviceUUID>]`**  
   Returns a JSON structure with the following fields:  
   1. **`corrected`**: Count of ECC errors that were corrected in registry file.  
   2. **`uncorrected`**: Count of ECC errors that could not be corrected in registry file.
 
 ## Device PCI Metrics
-- **`nvml.device.pci.utilization[<device_uuid>]`**  
+- **`nvml.device.pci.utilization[<deviceUUID>]`**  
   Returns a JSON structure with the following fields:  
   1. **`tx_rate_kb_s`**: PCI transmit throughput in KB/s.  
   2. **`rx_rate_kb_s`**: PCI receive throughput in KB/s.
 
 ## Device Encoder/Decoder Metrics
-- **`nvml.device.encoder.stats.get[<device_uuid>]`**  
+- **`nvml.device.encoder.stats.get[<deviceUUID>]`**  
   Returns a JSON structure with the following fields:  
   1. **`session_count`**: Count of active encoder sessions.  
   2. **`average_fps`**: Average FPS of all active sessions.  
   3. **`average_latency_ms`**: Encode latency in microseconds.
 
-- **`nvml.device.encoder.utilization[<device_uuid>]`**  
+- **`nvml.device.encoder.utilization[<deviceUUID>]`**  
   Returns a single value: (unsigned int) encoder utilization as a percentage.
 
-- **`nvml.device.decoder.utilization[<device_uuid>]`**  
+- **`nvml.device.decoder.utilization[<deviceUUID>]`**  
   Returns a single value: (unsigned int) decoder utilization as a percentage.
 
 ## Device Frequency Metrics
-- **`nvml.device.video.frequency[<device_uuid>]`**  
+- **`nvml.device.video.frequency[<deviceUUID>]`**  
   Returns a single value: (unsigned int) video clock speed in MHz.
 
-- **`nvml.device.graphics.frequency[<device_uuid>]`**  
+- **`nvml.device.graphics.frequency[<deviceUUID>]`**  
   Returns a single value: (unsigned int) graphics clock speed in MHz.
 
-- **`nvml.device.sm.frequency[<device_uuid>]`**  
+- **`nvml.device.sm.frequency[<deviceUUID>]`**  
   Returns a single value: (unsigned int) streaming multiprocessor (SM) clock speed in MHz.
 
-- **`nvml.device.memory.frequency[<device_uuid>]`**  
+- **`nvml.device.memory.frequency[<deviceUUID>]`**  
   Returns a single value: (unsigned int) memory clock speed in MHz.
 
 ## Device Utilization Metrics
-- **`nvml.device.utilization[<device_uuid>]`**  
+- **`nvml.device.utilization[<deviceUUID>]`**  
   Returns a JSON structure with the following fields:  
   1. **`device`**: GPU utilization as a percentage.  
   2. **`memory`**: Memory utilization as a percentage.
