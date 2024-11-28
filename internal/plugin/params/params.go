@@ -20,7 +20,7 @@ import "golang.zabbix.com/sdk/metric"
 
 const (
 	// DeviceUUIDParamName device UUID parameter name.
-	DeviceUUIDParamName = "DeviceUUID"
+	DeviceUUIDParamName = "deviceUUID"
 )
 
 //nolint:gochecknoglobals // global constants.
