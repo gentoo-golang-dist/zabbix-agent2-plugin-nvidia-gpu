@@ -438,7 +438,7 @@ func (h *Handler) GetMemoryErrors(_ context.Context, metricParams map[string]str
 	}, nil
 }
 
-// GetRegistryErrors retrieves the number of corrected and uncorrected ECC errors in register file.
+// GetRegisterErrors retrieves the number of corrected and uncorrected ECC errors in register file.
 func (h *Handler) GetRegisterErrors(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
