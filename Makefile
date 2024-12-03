@@ -1,6 +1,6 @@
 .ONESHELL:
 
-PACKAGE=zabbix-agent2-plugin-example
+PACKAGE=zabbix-agent2-plugin-nvidia
 TOPDIR := $(CURDIR)
 
 ifeq ($(OS),Windows_NT)
@@ -43,7 +43,7 @@ DISTFILES = \
 	LICENSE \
 	main.go \
 	Makefile \
-	example.conf \
+	nvidia.conf \
 	README.md
 
 DIST_SUBDIRS = \

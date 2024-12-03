@@ -25,7 +25,7 @@ import (
 	"golang.zabbix.com/sdk/plugin"
 )
 
-func Test_examplePlugin_Configure(t *testing.T) {
+func Test_nvmlPlugin_Configure(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
@@ -110,13 +110,13 @@ func Test_examplePlugin_Configure(t *testing.T) {
 			p.Configure(tt.args.global, tt.args.options)
 
 			if diff := cmp.Diff(tt.want, p.config); diff != "" {
-				t.Fatalf("examplePlugin_Configure() = %s", diff)
+				t.Fatalf("nvmlPlugin_Configure() = %s", diff)
 			}
 		})
 	}
 }
 
-func Test_examplePlugin_Validate(t *testing.T) {
+func Test_nvmlPlugin_Validate(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
@@ -155,7 +155,7 @@ func Test_examplePlugin_Validate(t *testing.T) {
 
 			e := &nvmlPlugin{}
 			if err := e.Validate(tt.args.options); (err != nil) != tt.wantErr {
-				t.Fatalf("examplePlugin.Validate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("nvmlPlugin.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
