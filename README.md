@@ -12,6 +12,15 @@ For information retrieval, the plugin uses NVIDIA's NVML dynamic library. By def
 - The plugin was developed for NVML API version 12. Older NVML versions may not support some metrics.
 - Metrics may report errors or be unsupported if your device cannot provide the required information.
 
+## Build from Source
+
+To build the NVIDIA GPU Plugin for Zabbix Agent 2 from source, ensure you have the following prerequisites.
+
+### Prerequisites
+1. **Go Programming Language**: Version 1.21 or higher.  
+2. **CGO Enabled**: The build process requires `CGO_ENABLED=1` for proper compilation.
+3. **C Compiler**: A C compiler is required for building with `CGO_ENABLED=1`.  
+
 ## Plugin Setup
 The `Plugins.NVIDIA.System.Path` variable must be set in the Zabbix Agent 2 configuration file, specifying the path to the NVIDIA GPU plugin executable. By default, this variable is set in the **plugin** configuration file `nvidia.conf`, which is then included in the **agent** configuration file `zabbix_agent2.conf`.
 
@@ -75,8 +84,8 @@ To configure plugins, use the Zabbix Agent configuration file.
 - **`nvml.device.memory.bar1.get[<deviceUUID>]`**  
   Returns a JSON structure with the following fields (in bytes):  
   1. **`total_memory_bytes`**: Total BAR1 memory available on the GPU.  
-  2. **`used_memory_bytes`**: BAR1 memory currently in use.  
-  3. **`free_memory_bytes`**: Available BAR1 memory.
+  2. **`free_memory_bytes`**: Available BAR1 memory.
+  3. **`used_memory_bytes`**: BAR1 memory currently in use.  
 
 - **`nvml.device.memory.fb.get[<deviceUUID>]`**  
   Returns a JSON structure with the following fields (in bytes):  
