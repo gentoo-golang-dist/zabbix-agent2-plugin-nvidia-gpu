@@ -20,7 +20,7 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 
 # Go workspace file
 go.work
@@ -102,5 +102,6 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/go,macos,linux,windows
 
 # go build binary
+zabbix-agent2-plugin-nvidia-*
 zabbix-agent2-plugin-nvidia
 nvidia

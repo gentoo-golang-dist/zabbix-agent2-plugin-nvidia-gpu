@@ -47,8 +47,9 @@ DISTFILES = \
 	README.md
 
 DIST_SUBDIRS = \
-	plugin \
 	windres \
+	pkg \
+	internal \
 	vendor
 
 .build_rc:
