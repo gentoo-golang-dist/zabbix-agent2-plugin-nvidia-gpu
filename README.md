@@ -11,7 +11,7 @@ For information retrieval, the plugin uses NVIDIA's NVML dynamic library. By def
 ### Notes
 - The plugin was developed for NVML API version 12. Older NVML versions may not support some metrics.
 - Metrics may report errors or be unsupported if your device cannot provide the required information.
-- **If NVIDIA drivers are absent, Zabbix Agent 2 with the NVIDIA GPU plugin will not start.**
+- **If the NVML dynamic library, which is installed by default with the NVIDIA driver, is absent, Zabbix Agent 2 with the NVIDIA GPU plugin will not start.**
 
 ## Build from Source
 
