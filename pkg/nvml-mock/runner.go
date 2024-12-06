@@ -170,7 +170,7 @@ func (m *MockRunner) GetDeviceCountV2() (uint, error) {
 
 // GetDeviceByIndexV2 is mock function.
 //
-//nolint:ireturn
+//nolint:ireturn,nolintlint
 func (m *MockRunner) GetDeviceByIndexV2(index uint) (nvml.Device, error) {
 	m.t.Helper()
 	res, err := m.handleFunctionCall("GetDeviceByIndexV2", index)
@@ -191,7 +191,7 @@ func (m *MockRunner) GetDeviceByIndexV2(index uint) (nvml.Device, error) {
 
 // GetDeviceByUUID is mock function.
 //
-//nolint:ireturn
+//nolint:ireturn,nolintlint
 func (m *MockRunner) GetDeviceByUUID(uuid string) (nvml.Device, error) {
 	m.t.Helper()
 	res, err := m.handleFunctionCall("GetDeviceByUUID", uuid)

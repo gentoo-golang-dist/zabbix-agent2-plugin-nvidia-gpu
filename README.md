@@ -1,5 +1,28 @@
 # NVIDIA GPU Plugin for Zabbix Agent 2
 
+# Table of Contents
+
+- [Plugin Information](#plugin-information)
+- [Requirements](#requirements)
+    - [Notes](#notes)
+- [Build from Source](#build-from-source)
+    - [Prerequisites](#prerequisites)
+- [Plugin Setup](#plugin-setup)
+    - [Example Setup](#example-setup)
+- [Configuration](#configuration)
+- [Metric Keys](#metric-keys)
+    - [General Information](#general-information)
+    - [General Device Metrics](#general-device-metrics)
+    - [Device Memory Metrics](#device-memory-metrics)
+    - [Device ECC Mode](#device-ecc-mode)
+    - [Device ECC Error Metrics](#device-ecc-error-metrics)
+    - [Device PCI Metrics](#device-pci-metrics)
+    - [Device Encoder/Decoder Metrics](#device-encoderdecoder-metrics)
+    - [Device Frequency Metrics](#device-frequency-metrics)
+    - [Device Utilization Metrics](#device-utilization-metrics)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+
 ## Plugin Information
 This plugin provides a native Zabbix solution for monitoring a broad range of NVIDIA GPU metrics with minimal configuration effort.
 
@@ -95,8 +118,8 @@ To configure plugins, use the Zabbix Agent configuration file.
   - **`free_memory_bytes`**: Available framebuffer memory.  
   - **`used_memory_bytes`**: Memory currently in use (includes reserved memory).
 
-### Notes
-- Reserved memory is included in the used memory.
+  ### Notes
+  - Reserved memory is included in the used memory.
 
 ## Device ECC Mode
 - **`nvml.device.ecc.mode[<deviceUUID>]`**  
@@ -153,3 +176,25 @@ To configure plugins, use the Zabbix Agent configuration file.
   - **`device`**: GPU utilization as a percentage.  
   - **`memory`**: Memory utilization as a percentage.
 
+## Troubleshooting
+
+The plugin sends all of its logs to Zabbix agent 2, that further logs them where
+ever agent 2 log location is configured to.
+
+For debugging Zabbix Agent 2 log level setting can be increased either in config
+by field `DebugLevel` or by runtime control by running
+
+```sh
+zabbix_agent2 -R log_level_increase
+```
+
+For more information about Zabbix agent 2 view
+[Zabbix documentation](https://www.zabbix.com/documentation/current/en/manual/concepts/agent2).
+
+## Contributing
+
+Noticed a bug or have an idea for improvement? Feel free to open an issue or a
+feature request in
+[Zabbix support system](https://support.zabbix.com/secure/Dashboard.jspa)
+
+Want to contribute? Pull requests are welcome!
