@@ -38,6 +38,8 @@ For information retrieval, the plugin uses NVIDIA's NVML dynamic library. By def
 
 ## Build from Source
 
+The plugin supports building for both Linux and Windows. To avoid errors during cross-compilation, it is recommended to build the plugin directly on the target operating system.
+
 To build the NVIDIA GPU Plugin for Zabbix Agent 2 from source, ensure you have the following prerequisites.
 
 ### Prerequisites
@@ -178,23 +180,18 @@ To configure plugins, use the Zabbix Agent configuration file.
 
 ## Troubleshooting
 
-The plugin sends all of its logs to Zabbix agent 2, that further logs them where
-ever agent 2 log location is configured to.
+The plugin forwards all its logs to Zabbix Agent 2, which then logs them according to the log location configured for the agent.
 
-For debugging Zabbix Agent 2 log level setting can be increased either in config
-by field `DebugLevel` or by runtime control by running
+For debugging purposes, you can increase the Zabbix Agent 2 log level by either updating the `DebugLevel` field in the configuration file or using runtime control with the following command:
 
 ```sh
 zabbix_agent2 -R log_level_increase
 ```
 
-For more information about Zabbix agent 2 view
-[Zabbix documentation](https://www.zabbix.com/documentation/current/en/manual/concepts/agent2).
+For more detailed information about Zabbix Agent 2, refer to the [official Zabbix documentation](https://www.zabbix.com/documentation/current/en/manual/concepts/agent2).
 
 ## Contributing
 
-Noticed a bug or have an idea for improvement? Feel free to open an issue or a
-feature request in
-[Zabbix support system](https://support.zabbix.com/secure/Dashboard.jspa)
+Found a bug or have a suggestion for improvement? Feel free to open an issue or submit a feature request through the [Zabbix support system](https://support.zabbix.com/secure/Dashboard.jspa).
 
-Want to contribute? Pull requests are welcome!
+Interested in contributing? Pull requests are always welcome!
