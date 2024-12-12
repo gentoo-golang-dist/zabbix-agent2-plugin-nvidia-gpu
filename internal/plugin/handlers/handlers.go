@@ -394,12 +394,17 @@ func (h *Handler) GetFBMemoryInfo(_ context.Context, metricParams map[string]str
 		return nil, errs.Wrap(err, "failed to get device by UUID")
 	}
 
-	memoryInfo, err := device.GetMemoryInfoV2()
+	memoryInfoV2, err := device.GetMemoryInfoV2()
+	if err == nil {
+		return memoryInfoV2, nil
+	}
+
+	memortInfoV1, err := device.GetMemoryInfo()
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to get memory info")
 	}
 
-	return memoryInfo, nil
+	return memortInfoV1, nil
 }
 
 // GetMemoryErrors retrieves the number of corrected and uncorrected ECC errors in memory.

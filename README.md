@@ -134,6 +134,7 @@ To configure plugins, use the Zabbix Agent configuration file.
 
   ### Notes
   - Reserved memory is included in the used memory.
+  - If you are using an older version of the driver, the field **`reserved_memory_bytes`** may not be included in the response.
 
 <!-- TOC --><a name="device-ecc-mode"></a>
 ## Device ECC Mode

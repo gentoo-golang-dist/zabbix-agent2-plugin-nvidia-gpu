@@ -1530,6 +1530,42 @@ func TestHandler_GetFBMemoryInfo(t *testing.T) {
 			false,
 		},
 		{
+			"+fallback",
+			expect{
+				device: device{
+					deviceUUID: "test-uuid",
+					expectations: []*nvmlmock.Expectation{
+						nvmlmock.NewExpectation("GetDeviceByUUID").
+							WithExpextedArgs("test-uuid").
+							ProvideOutput(
+								nvmlmock.NewMockDevice(t).ExpectCalls(
+									nvmlmock.NewExpectation("GetMemoryInfoV2").
+										ProvideOutput(nil).
+										ProvideError(errors.New("fail")),
+									nvmlmock.NewExpectation("GetMemoryInfo").
+										ProvideOutput(&nvml.MemoryInfo{
+											Total: 10,
+											Used:  8,
+											Free:  2,
+										}),
+								),
+							),
+					},
+				},
+			},
+			args{
+				metricParams: map[string]string{
+					params.DeviceUUIDParamName: "test-uuid",
+				},
+			},
+			&nvml.MemoryInfo{
+				Total: 10,
+				Used:  8,
+				Free:  2,
+			},
+			false,
+		},
+		{
 			"-noInMetricParams",
 			expect{},
 			args{
@@ -1559,7 +1595,7 @@ func TestHandler_GetFBMemoryInfo(t *testing.T) {
 			true,
 		},
 		{
-			name: "-nvmlDeviceGetMemoryInfoV2Error",
+			name: "-fallbackError",
 			expect: expect{
 				device: device{
 					deviceUUID: "test-uuid",
@@ -1569,12 +1605,10 @@ func TestHandler_GetFBMemoryInfo(t *testing.T) {
 							ProvideOutput(
 								nvmlmock.NewMockDevice(t).ExpectCalls(
 									nvmlmock.NewExpectation("GetMemoryInfoV2").
-										ProvideOutput(&nvml.MemoryInfoV2{
-											Total:    10,
-											Used:     8,
-											Free:     2,
-											Reserved: 1,
-										}).
+										ProvideOutput(nil).
+										ProvideError(errors.New("fail")),
+									nvmlmock.NewExpectation("GetMemoryInfo").
+										ProvideOutput(nil).
 										ProvideError(errors.New("fail")),
 								),
 							),

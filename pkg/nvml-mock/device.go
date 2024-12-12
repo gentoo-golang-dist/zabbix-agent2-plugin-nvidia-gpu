@@ -330,9 +330,30 @@ func (m *MockDevice) GetMemoryInfoV2() (*nvml.MemoryInfoV2, error) {
 	m.t.Helper()
 	res, err := m.handleFunctionCall("GetMemoryInfoV2")
 
+	if err != nil {
+		return nil, err
+	}
+
 	info, ok := res.out[0].(*nvml.MemoryInfoV2)
 	if !ok {
 		m.t.Fatalf("expected %T in GetMemoryInfoV2, got %T", info, res.out[0])
+	}
+
+	return info, err
+}
+
+// GetMemoryInfo is mock function.
+func (m *MockDevice) GetMemoryInfo() (*nvml.MemoryInfo, error) {
+	m.t.Helper()
+	res, err := m.handleFunctionCall("GetMemoryInfo")
+
+	if err != nil {
+		return nil, err
+	}
+
+	info, ok := res.out[0].(*nvml.MemoryInfo)
+	if !ok {
+		m.t.Fatalf("expected %T in GetMemoryInfo, got %T", info, res.out[0])
 	}
 
 	return info, err
