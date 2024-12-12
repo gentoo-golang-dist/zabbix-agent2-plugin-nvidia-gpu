@@ -23,33 +23,40 @@
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 
+<!-- TOC --><a name="plugin-information"></a>
 ## Plugin Information
 This plugin provides a native Zabbix solution for monitoring a broad range of NVIDIA GPU metrics with minimal configuration effort.
 
 For information retrieval, the plugin uses NVIDIA's NVML dynamic library. By default, the NVML library is installed on your host along with NVIDIA drivers.
 
+<!-- TOC --><a name="requirements"></a>
 ## Requirements
 - Installed NVIDIA driver.
 
+<!-- TOC --><a name="notes"></a>
 ### Notes
 - The plugin was developed for NVML API version 12. Older NVML versions may not support some metrics.
 - Metrics may report errors or be unsupported if your device cannot provide the required information.
 - **If the NVML dynamic library, which is installed by default with the NVIDIA driver, is absent, Zabbix Agent 2 with the NVIDIA GPU plugin will not start.**
 
+<!-- TOC --><a name="build-from-source"></a>
 ## Build from Source
 
 The plugin supports building for both Linux and Windows. To avoid errors during cross-compilation, it is recommended to build the plugin directly on the target operating system.
 
 To build the NVIDIA GPU Plugin for Zabbix Agent 2 from source, ensure you have the following prerequisites.
 
+<!-- TOC --><a name="prerequisites"></a>
 ### Prerequisites
 - **Go Programming Language**: Version 1.21 or higher.
 - **CGO Enabled**: The build process requires `CGO_ENABLED=1` for proper compilation.
 - **C Compiler**: A C compiler is required for building with `CGO_ENABLED=1`.
 
+<!-- TOC --><a name="plugin-setup"></a>
 ## Plugin Setup
 The `Plugins.NVIDIA.System.Path` variable must be set in the Zabbix Agent 2 configuration file, specifying the path to the NVIDIA GPU plugin executable. By default, this variable is set in the **plugin** configuration file `nvidia.conf`, which is then included in the **agent** configuration file `zabbix_agent2.conf`.
 
+<!-- TOC --><a name="example-setup"></a>
 ### Example Setup:
 - Add the following option to the **plugin** configuration file:
    ```text
@@ -60,6 +67,7 @@ The `Plugins.NVIDIA.System.Path` variable must be set in the Zabbix Agent 2 conf
    Include=/path/to/config/nvidia.conf
    ```
 
+<!-- TOC --><a name="configuration"></a>
 ## Configuration
 To configure plugins, use the Zabbix Agent configuration file.
 
@@ -67,8 +75,10 @@ To configure plugins, use the Zabbix Agent configuration file.
   - **Default**: Equal to the global `Timeout` parameter in the Zabbix Agent 2 configuration file.
   - **Limits**: 1-30 seconds.
 
+<!-- TOC --><a name="metric-keys"></a>
 # Metric Keys
 
+<!-- TOC --><a name="general-information"></a>
 ## General Information
 - **`nvml.version`**
   Returns a single value: (string) version of the NVML library.
@@ -84,6 +94,7 @@ To configure plugins, use the Zabbix Agent configuration file.
 - **`nvml.device.count`**
   Returns a single value: (unsigned int) number of devices.
 
+<!-- TOC --><a name="general-device-metrics"></a>
 ## General Device Metrics
 - **`nvml.device.temperature[<deviceUUID>]`**
   Returns a single value: (unsigned int) temperature of the device in Celsius.
@@ -106,6 +117,7 @@ To configure plugins, use the Zabbix Agent configuration file.
 - **`nvml.device.power.usage[<deviceUUID>]`**
   Returns a single value: (unsigned int) current power usage in milliwatts.
 
+<!-- TOC --><a name="device-memory-metrics"></a>
 ## Device Memory Metrics
 - **`nvml.device.memory.bar1.get[<deviceUUID>]`**
   Returns a JSON structure with the following fields (in bytes):
@@ -123,12 +135,14 @@ To configure plugins, use the Zabbix Agent configuration file.
   ### Notes
   - Reserved memory is included in the used memory.
 
+<!-- TOC --><a name="device-ecc-mode"></a>
 ## Device ECC Mode
 - **`nvml.device.ecc.mode[<deviceUUID>]`**
   Returns a JSON structure with the following fields:
   - **`current`**: The current ECC mode (bool).
   - **`pending`**: The pending ECC mode (bool) to be applied after reboot.
 
+<!-- TOC --><a name="device-ecc-error-metrics"></a>
 ## Device ECC Error Metrics
 - **`nvml.device.errors.memory[<deviceUUID>]`**
   Returns a JSON structure with the following fields:
@@ -140,12 +154,14 @@ To configure plugins, use the Zabbix Agent configuration file.
   - **`corrected`**: Count of ECC errors that were corrected in register file.
   - **`uncorrected`**: Count of ECC errors that could not be corrected in register file.
 
+<!-- TOC --><a name="device-pci-metrics"></a>
 ## Device PCI Metrics
 - **`nvml.device.pci.utilization[<deviceUUID>]`**
   Returns a JSON structure with the following fields:
   - **`tx_rate_kb_s`**: PCI transmit throughput in KB/s.
   - **`rx_rate_kb_s`**: PCI receive throughput in KB/s.
 
+<!-- TOC --><a name="device-encoderdecoder-metrics"></a>
 ## Device Encoder/Decoder Metrics
 - **`nvml.device.encoder.stats.get[<deviceUUID>]`**
   Returns a JSON structure with the following fields:
@@ -159,6 +175,7 @@ To configure plugins, use the Zabbix Agent configuration file.
 - **`nvml.device.decoder.utilization[<deviceUUID>]`**
   Returns a single value: (unsigned int) decoder utilization as a percentage.
 
+<!-- TOC --><a name="device-frequency-metrics"></a>
 ## Device Frequency Metrics
 - **`nvml.device.video.frequency[<deviceUUID>]`**
   Returns a single value: (unsigned int) video clock speed in MHz.
@@ -172,12 +189,14 @@ To configure plugins, use the Zabbix Agent configuration file.
 - **`nvml.device.memory.frequency[<deviceUUID>]`**
   Returns a single value: (unsigned int) memory clock speed in MHz.
 
+<!-- TOC --><a name="device-utilization-metrics"></a>
 ## Device Utilization Metrics
 - **`nvml.device.utilization[<deviceUUID>]`**
   Returns a JSON structure with the following fields:
   - **`device`**: GPU utilization as a percentage.
   - **`memory`**: Memory utilization as a percentage.
 
+<!-- TOC --><a name="troubleshooting"></a>
 ## Troubleshooting
 
 The plugin forwards all its logs to Zabbix Agent 2, which then logs them according to the log location configured for the agent.
@@ -190,6 +209,7 @@ zabbix_agent2 -R log_level_increase
 
 For more detailed information about Zabbix Agent 2, refer to the [official Zabbix documentation](https://www.zabbix.com/documentation/current/en/manual/concepts/agent2).
 
+<!-- TOC --><a name="contributing"></a>
 ## Contributing
 
 Found a bug or have a suggestion for improvement? Feel free to open an issue or submit a feature request through the [Zabbix support system](https://support.zabbix.com/secure/Dashboard.jspa).
