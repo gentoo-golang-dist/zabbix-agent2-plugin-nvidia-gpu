@@ -89,7 +89,7 @@ To configure plugins, use the Zabbix Agent configuration file.
   Returns a single value: (unsigned int) temperature of the device in Celsius.
 
 - **`nvml.device.serial[<deviceUUID>]`**
-  Returns a single value: (unsigned int) number of devices.
+  Returns a single value: (string) device serial number.
 
 - **`nvml.device.fan.speed.avg[<deviceUUID>]`**
   Returns a single value: (unsigned int) average fan speed as a percentage of maximum speed.
