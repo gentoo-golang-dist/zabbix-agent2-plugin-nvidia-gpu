@@ -46,9 +46,9 @@ const copyrightMessage = //
 //nolint:gochecknoglobals,revive // required ALL_CAPS by build scripts
 var (
 	PLUGIN_VERSION_MAJOR = 7
-	PLUGIN_VERSION_MINOR = 4
+	PLUGIN_VERSION_MINOR = 2
 	PLUGIN_VERSION_PATCH = 0
-	PLUGIN_VERSION_RC    = "alpha1"
+	PLUGIN_VERSION_RC    = "rc1"
 	PLUGIN_LICENSE_YEAR  = 2024
 )
 
