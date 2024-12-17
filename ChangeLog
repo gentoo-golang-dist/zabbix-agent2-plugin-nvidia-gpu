@@ -1,6 +1,7 @@
 Changes for 7.2.1rc1
 
 New features:
+...G...... [ZBXNEXT-9042] implemented NVIDIA GPU loadable plugin for Zabbix agent 2 (sjurgensons)
 
 Bug fixes:
 
