@@ -1,6 +1,6 @@
 .ONESHELL:
 
-PACKAGE=zabbix-agent2-plugin-nvidia
+PACKAGE=zabbix-agent2-plugin-nvidia-gpu
 TOPDIR := $(CURDIR)
 
 ifeq ($(OS),Windows_NT)
