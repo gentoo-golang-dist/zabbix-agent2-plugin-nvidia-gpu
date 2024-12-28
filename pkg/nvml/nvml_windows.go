@@ -170,6 +170,7 @@ func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (Device, error) {
 func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (Device, error) {
 	var deviceHandle uintptr
 
+	// Adds terminator sign
 	cUUID, err := windows.ByteSliceFromString(uuid)
 	if err != nil {
 		return nil, errs.Wrap(err, "uuid contains terminator sign")
