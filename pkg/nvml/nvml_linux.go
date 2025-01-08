@@ -213,7 +213,7 @@ func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (Device, error) {
 
 	// +1 accounts for terminator sign that is going to be added in the next step.
 	if len(uuid)+1 > deviceUUIDBufferSize {
-		return nil, errs.New("uuid string too long")
+		return nil, errs.New("UUID string too long")
 	}
 
 	// Adds terminator sign inside
