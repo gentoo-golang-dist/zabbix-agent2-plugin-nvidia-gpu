@@ -58,14 +58,14 @@ type NVMLDevice struct {
 func (runner *NVMLRunner) InitRunner() error {
 	dll, err := windows.LoadDLL("nvml.dll")
 	if err != nil {
-		return nil, errs.WrapConst(err, ErrLibraryNotFound) //nolint:wrapcheck
+		return errs.WrapConst(err, ErrLibraryNotFound) //nolint:wrapcheck
 	}
 
 	runner.dll = dll
 	runner.procList = make(map[string]*windows.Proc)
 	runner.procListMux = &sync.Mutex{}
 
-	return runner, nil
+	return nil
 }
 
 // NVMLInit initializes the NVML library using the older NVML interface.
