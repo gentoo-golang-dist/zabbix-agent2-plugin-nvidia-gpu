@@ -204,6 +204,7 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 			fields{
 				[]*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("ShutdownNVML").ProvideError(nil),
+					nvmlmock.NewExpectation("Close").ProvideError(nil),
 				},
 			},
 		},
@@ -212,6 +213,25 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 			fields{
 				[]*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("ShutdownNVML").ProvideError(nvml.ErrNotFound),
+					nvmlmock.NewExpectation("Close").ProvideError(nil),
+				},
+			},
+		},
+		{
+			"-nvmlRunnerCloseError",
+			fields{
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("ShutdownNVML").ProvideError(nil),
+					nvmlmock.NewExpectation("Close").ProvideError(errs.New("fail")),
+				},
+			},
+		},
+		{
+			"-allErrors",
+			fields{
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("ShutdownNVML").ProvideError(nvml.ErrNotFound),
+					nvmlmock.NewExpectation("Close").ProvideError(errs.New("fail")),
 				},
 			},
 		},
@@ -259,7 +279,8 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 			"+validWithInitV2",
 			fields{
 				[]*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("InitV2").ProvideError(nil),
+					nvmlmock.NewExpectation("InitRunner").ProvideError(nil),
+					nvmlmock.NewExpectation("NVMLInitV2").ProvideError(nil),
 				},
 			},
 			expect{
@@ -270,8 +291,9 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 			"+validWithInit",
 			fields{
 				[]*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("InitV2").ProvideError(nvml.ErrFunctionNotFound),
-					nvmlmock.NewExpectation("Init").ProvideError(nil),
+					nvmlmock.NewExpectation("InitRunner").ProvideError(nil),
+					nvmlmock.NewExpectation("NVMLInitV2").ProvideError(nvml.ErrFunctionNotFound),
+					nvmlmock.NewExpectation("NVMLInit").ProvideError(nil),
 				},
 			},
 			expect{
@@ -279,11 +301,23 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 			},
 		},
 		{
+			"-runnerInitError",
+			fields{
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("InitRunner").ProvideError(nvml.ErrLibraryNotFound),
+				},
+			},
+			expect{
+				shouldPanic: true,
+			},
+		},
+		{
 			"-nvmlInitError",
 			fields{
 				[]*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("InitV2").ProvideError(nvml.ErrFunctionNotFound),
-					nvmlmock.NewExpectation("Init").ProvideError(nvml.ErrFunctionNotFound),
+					nvmlmock.NewExpectation("InitRunner").ProvideError(nil),
+					nvmlmock.NewExpectation("NVMLInitV2").ProvideError(nvml.ErrFunctionNotFound),
+					nvmlmock.NewExpectation("NVMLInit").ProvideError(nvml.ErrFunctionNotFound),
 				},
 			},
 			expect{
@@ -311,7 +345,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 				}
 
 				if !tt.expect.shouldPanic && r != nil {
-					t.Fatalf("nvmlPlugin.Start() unecpected panic occurred")
+					t.Fatalf("nvmlPlugin.Start() unexpected panic occurred")
 				}
 			}()
 

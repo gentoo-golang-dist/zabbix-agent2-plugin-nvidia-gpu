@@ -22,6 +22,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
+	nvmlmock "golang.zabbix.com/plugin/nvidia/pkg/nvml-mock"
+	"golang.zabbix.com/sdk/errs"
 	"golang.zabbix.com/sdk/log"
 	"golang.zabbix.com/sdk/plugin"
 )
@@ -120,24 +123,61 @@ func Test_nvmlPlugin_Configure(t *testing.T) {
 func Test_nvmlPlugin_Validate(t *testing.T) {
 	t.Parallel()
 
+	type fields struct {
+		runnerExpect []*nvmlmock.Expectation
+	}
+
 	type args struct {
 		options any
 	}
 
 	tests := []struct {
 		name    string
+		fields  fields
 		args    args
 		wantErr bool
 	}{
 		{
 			"+valid",
+			fields{
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("InitRunner").ProvideError(nil),
+					nvmlmock.NewExpectation("Close").ProvideError(nil),
+				},
+			},
 			args{
 				[]byte(`Timeout=30`),
 			},
 			false,
 		},
 		{
+			"-runnerInitErr",
+			fields{
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("InitRunner").ProvideError(nvml.ErrLibraryNotFound),
+				},
+			},
+			args{
+				[]byte(`Timeout=30`),
+			},
+			true,
+		},
+		{
+			"-runnerCloseErr",
+			fields{
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("InitRunner").ProvideError(nil),
+					nvmlmock.NewExpectation("Close").ProvideError(errs.New("fail")),
+				},
+			},
+			args{
+				[]byte(`Timeout=30`),
+			},
+			true,
+		},
+		{
 			"-unmarshalErr",
+			fields{},
 			args{
 				[]byte(
 					strings.Join(
@@ -153,9 +193,15 @@ func Test_nvmlPlugin_Validate(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
 
-			e := &nvmlPlugin{}
-			if err := e.Validate(tt.args.options); (err != nil) != tt.wantErr {
+			p := &nvmlPlugin{
+				nvmlRunner: runner,
+			}
+
+			p.Logger = log.New("test")
+
+			if err := p.Validate(tt.args.options); (err != nil) != tt.wantErr {
 				t.Fatalf("nvmlPlugin.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

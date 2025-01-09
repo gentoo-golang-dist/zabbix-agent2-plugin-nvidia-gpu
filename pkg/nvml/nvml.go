@@ -21,10 +21,14 @@ package nvml
 //
 //nolint:interfacebloat
 type Runner interface {
-	// InitNVML initializes the NVML library using the older NVML interface.
-	Init() error
-	// InitNVMLv2 initializes the NVML library using the NVML v2 interface.
-	InitV2() error
+	// InitRunner initializes all the runner fields and loads NVML library.
+	InitRunner() error
+
+	// NVMLInit initializes the NVML library using the older NVML interface.
+	NVMLInit() error
+
+	// NVMLInitV2 initializes the NVML library using the NVML v2 interface.
+	NVMLInitV2() error
 
 	// GetDeviceCount retrieves the number of NVIDIA devices using the standard NVML interface.
 	GetDeviceCount() (uint, error)

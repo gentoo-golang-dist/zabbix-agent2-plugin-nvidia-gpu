@@ -105,18 +105,26 @@ func (m *MockRunner) ExpectedCallsDone() bool {
 	return done
 }
 
-// Init is mock function.
-func (m *MockRunner) Init() error {
+// InitRunner is mock function.
+func (m *MockRunner) InitRunner() error {
 	m.t.Helper()
-	_, err := m.handleFunctionCall("Init")
+	_, err := m.handleFunctionCall("InitRunner")
 
 	return err
 }
 
-// InitV2 is mock function.
-func (m *MockRunner) InitV2() error {
+// NVMLInit is mock function.
+func (m *MockRunner) NVMLInit() error {
 	m.t.Helper()
-	_, err := m.handleFunctionCall("InitV2")
+	_, err := m.handleFunctionCall("NVMLInit")
+
+	return err
+}
+
+// NVMLInitV2 is mock function.
+func (m *MockRunner) NVMLInitV2() error {
+	m.t.Helper()
+	_, err := m.handleFunctionCall("NVMLInitV2")
 
 	return err
 }
@@ -212,6 +220,14 @@ func (m *MockRunner) GetDeviceByUUID(uuid string) (nvml.Device, error) {
 	}
 
 	return device, err
+}
+
+// Close is mock function.
+func (m *MockRunner) Close() error {
+	m.t.Helper()
+	_, err := m.handleFunctionCall("Close")
+
+	return err
 }
 
 // handleFunctionCall is handler for mock function calls.

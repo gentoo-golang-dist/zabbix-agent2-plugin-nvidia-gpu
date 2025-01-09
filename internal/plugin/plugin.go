@@ -55,16 +55,9 @@ type nvmlPlugin struct {
 // Launch launches the NVIDIA plugin. Blocks until plugin execution has
 // finished.
 func Launch() error {
-	runner, err := nvml.NewNVMLRunner()
-	if err != nil {
-		return errs.Wrap(err, "failed to create new nvml runner")
-	}
+	p := &nvmlPlugin{}
 
-	p := &nvmlPlugin{
-		nvmlRunner: runner,
-	}
-
-	err = p.registerMetrics()
+	err := p.registerMetrics()
 	if err != nil {
 		return errs.Wrap(err, "failed to register metrics")
 	}
@@ -73,8 +66,6 @@ func Launch() error {
 	if err != nil {
 		return errs.Wrap(err, "failed to create new handler")
 	}
-
-	defer p.nvmlRunner.Close() //nolint:errcheck
 
 	p.Logger = h
 
@@ -90,13 +81,20 @@ func Launch() error {
 func (p *nvmlPlugin) Start() {
 	p.Logger.Infof("Start called")
 
+	err := p.nvmlRunner.InitRunner()
+	if err != nil {
+		wrappedErr := errs.Wrap(err, "failed to init NVML runner")
+		p.Logger.Errf("%s", wrappedErr.Error())
+		panic(wrappedErr)
+	}
+
 	// Try to initialize NVML using InitV2, fallback to Init if it fails
-	err := p.nvmlRunner.InitV2()
+	err = p.nvmlRunner.NVMLInitV2()
 	if err != nil {
 		p.Logger.Debugf("failed to init runner with InitNVMLv2: %s", err.Error())
 
 		// Fallback to Init if InitV2 fails
-		err = p.nvmlRunner.Init()
+		err = p.nvmlRunner.NVMLInit()
 		if err != nil {
 			wrappedErr := errs.Wrap(err, "failed to init NVML library")
 			p.Logger.Errf("%s", wrappedErr.Error())
@@ -112,6 +110,11 @@ func (p *nvmlPlugin) Stop() {
 	err := p.nvmlRunner.ShutdownNVML()
 	if err != nil {
 		p.Logger.Errf("failed to shutdown nvml %s", err.Error())
+	}
+
+	err = p.nvmlRunner.Close()
+	if err != nil {
+		p.Logger.Errf("failed to shutdown nvml runner %s", err.Error())
 	}
 }
 

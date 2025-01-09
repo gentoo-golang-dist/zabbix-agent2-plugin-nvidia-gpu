@@ -58,24 +58,22 @@ type NVMLDevice struct {
 	runner *NVMLRunner    // Reference to the Runner for managing NVML operations
 }
 
-// NewNVMLRunner creates a new NVML Runner instance, loading the NVML library.
-func NewNVMLRunner() (*NVMLRunner, error) {
+// InitRunner initilizes all NVML Runner fields, including loading the NVML library.
+func (runner *NVMLRunner) InitRunner() error {
 	dynamicLib, err := loadLibrary()
 	if err != nil {
-		return nil, err
+		return errs.Wrap(err, "failed to load nvml library")
 	}
 
-	runner := &NVMLRunner{
-		dynamicLib:  dynamicLib,
-		procListMux: &sync.Mutex{},
-		procList:    make(map[string]struct{}),
-	}
+	runner.dynamicLib = dynamicLib
+	runner.procListMux = &sync.Mutex{}
+	runner.procList = make(map[string]struct{})
 
-	return runner, nil
+	return nil
 }
 
-// Init initializes the NVML library using the older NVML interface.
-func (runner *NVMLRunner) Init() error {
+// NVMLInit initializes the NVML library using the older NVML interface.
+func (runner *NVMLRunner) NVMLInit() error {
 	err := runner.symbolExists("nvmlInit")
 	if err != nil {
 		return errs.Wrap(err, "failed to verify existence of NVML symbol")
@@ -90,8 +88,8 @@ func (runner *NVMLRunner) Init() error {
 	return nil
 }
 
-// InitV2 initializes the NVML library using the NVML v2 interface.
-func (runner *NVMLRunner) InitV2() error {
+// NVMLInitV2 initializes the NVML library using the NVML v2 interface.
+func (runner *NVMLRunner) NVMLInitV2() error {
 	err := runner.symbolExists("nvmlInit_v2")
 	if err != nil {
 		return errs.Wrap(err, "failed to verify existence of NVML symbol")

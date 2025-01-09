@@ -54,24 +54,22 @@ type NVMLDevice struct {
 	runner *NVMLRunner // Reference to the Runner (formerly NVMLRunner)
 }
 
-// NewNVMLRunner creates a new NVML Runner instance, loading the NVML library.
-func NewNVMLRunner() (*NVMLRunner, error) {
+// InitRunner initilizes all NVML Runner fields, including loading the NVML library.
+func (runner *NVMLRunner) InitRunner() error {
 	dll, err := windows.LoadDLL("nvml.dll")
 	if err != nil {
 		return nil, errs.WrapConst(err, ErrLibraryNotFound) //nolint:wrapcheck
 	}
 
-	runner := &NVMLRunner{
-		dll:         dll,
-		procList:    make(map[string]*windows.Proc),
-		procListMux: &sync.Mutex{},
-	}
+	runner.dll = dll
+	runner.procList = make(map[string]*windows.Proc)
+	runner.procListMux = &sync.Mutex{}
 
 	return runner, nil
 }
 
-// Init initializes the NVML library using the older NVML interface.
-func (runner *NVMLRunner) Init() error {
+// NVMLInit initializes the NVML library using the older NVML interface.
+func (runner *NVMLRunner) NVMLInit() error {
 	err := runner.callProc("nvmlInit")
 	if err != nil {
 		return errs.Wrap(err, "failed while calling procedure")
@@ -80,8 +78,8 @@ func (runner *NVMLRunner) Init() error {
 	return nil
 }
 
-// InitV2 initializes the NVML library using the NVML v2 interface.
-func (runner *NVMLRunner) InitV2() error {
+// NVMLInitV2 initializes the NVML library using the NVML v2 interface.
+func (runner *NVMLRunner) NVMLInitV2() error {
 	err := runner.callProc("nvmlInit_v2")
 	if err != nil {
 		return errs.Wrap(err, "failed while calling procedure")
