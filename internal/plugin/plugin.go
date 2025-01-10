@@ -55,7 +55,7 @@ type nvmlPlugin struct {
 // Launch launches the NVIDIA plugin. Blocks until plugin execution has
 // finished.
 func Launch() error {
-	p := &nvmlPlugin{}
+	p := &nvmlPlugin{nvmlRunner: &nvml.NVMLRunner{}}
 
 	err := p.registerMetrics()
 	if err != nil {
