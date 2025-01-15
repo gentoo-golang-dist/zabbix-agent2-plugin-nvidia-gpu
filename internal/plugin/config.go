@@ -18,6 +18,7 @@
 package plugin
 
 import (
+	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
 	"golang.zabbix.com/sdk/conf"
 	"golang.zabbix.com/sdk/errs"
 	"golang.zabbix.com/sdk/plugin"
@@ -54,6 +55,16 @@ func (*nvmlPlugin) Validate(options any) error {
 	err := conf.Unmarshal(options, &pluginConfig{})
 	if err != nil {
 		return errs.Wrap(err, "failed to unmarshal configuration options")
+	}
+
+	runner, err := nvml.NewNVMLRunner()
+	if err != nil {
+		return errs.Wrap(err, "failed to create new nvml runner")
+	}
+
+	err = runner.Close()
+	if err != nil {
+		return errs.Wrap(err, "failed to close new nvml runner")
 	}
 
 	return nil
