@@ -10,5 +10,5 @@ golang.org/x/sys v0.10.0 h1:SqMFp9UcQJZa+pmYuAKjd9xq1f0j5rLcDIk0mj4qAsA=
 golang.org/x/sys v0.10.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/tools v0.11.0 h1:EMCa6U9S2LtZXLAMoWiR/R8dAQFRqbAitmbJ2UKhoi8=
 golang.org/x/tools v0.11.0/go.mod h1:anzJrxPjNtfgiYQYirP2CPGzGLxrH2u2QBhn6Bf3qY8=
-golang.zabbix.com/sdk v1.2.2-0.20240927091021-0fbb7bcc247a h1:75lxidocRgaPZBDb2bKbAUopGi7/Zy/yojO/sXBG9Zc=
-golang.zabbix.com/sdk v1.2.2-0.20240927091021-0fbb7bcc247a/go.mod h1:KFfJAnUsBIfLemmPVz7TJPliJAwYUSuj4v3n5W1qrCQ=
+golang.zabbix.com/sdk v1.2.2-0.20250115114209-b889d5e5d8b5 h1:g58zi+IYTY+fdGHZzE8ZDzD5Sgis78UfzHdhRHJzu5I=
+golang.zabbix.com/sdk v1.2.2-0.20250115114209-b889d5e5d8b5/go.mod h1:KFfJAnUsBIfLemmPVz7TJPliJAwYUSuj4v3n5W1qrCQ=
