@@ -112,6 +112,10 @@ func (p *nvmlPlugin) Start() {
 func (p *nvmlPlugin) Stop() {
 	p.Logger.Infof("Stop called")
 
+	if p.nvmlRunner == nil {
+		return
+	}
+
 	err := p.nvmlRunner.ShutdownNVML()
 	if err != nil {
 		p.Logger.Errf("failed to shutdown nvml: %s", err.Error())
@@ -121,7 +125,6 @@ func (p *nvmlPlugin) Stop() {
 	if err != nil {
 		p.Logger.Errf("failed to close nvml runner: %s", err.Error())
 	}
-
 }
 
 // Export collects all the metrics.
