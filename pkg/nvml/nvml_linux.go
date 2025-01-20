@@ -59,7 +59,7 @@ type NVMLDevice struct {
 }
 
 // NewNVMLRunner creates a new NVML Runner instance, loading the NVML library.
-func NewNVMLRunner() (*NVMLRunner, error) {
+func NewNVMLRunner() (Runner, error) {
 	dynamicLib, err := loadLibrary()
 	if err != nil {
 		return nil, err
