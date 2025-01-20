@@ -55,7 +55,7 @@ type NVMLDevice struct {
 }
 
 // NewNVMLRunner creates a new NVML Runner instance, loading the NVML library.
-func NewNVMLRunner() (*NVMLRunner, error) {
+func NewNVMLRunner() (Runner, error) {
 	dll, err := windows.LoadDLL("nvml.dll")
 	if err != nil {
 		return nil, errs.WrapConst(err, ErrLibraryNotFound) //nolint:wrapcheck
