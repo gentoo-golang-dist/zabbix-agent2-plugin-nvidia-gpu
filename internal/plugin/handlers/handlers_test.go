@@ -97,7 +97,7 @@ func TestHandler_GetNVMLVersion(t *testing.T) {
 			}
 
 			// Call the method being tested
-			got, err := h.GetNVMLVersion(context.Background(), nil, nil...)
+			got, err := GetNVMLVersion(context.Background(), h, nil, nil...)
 
 			// Check for error match
 			if (err != nil) != tt.wantErr {
@@ -163,7 +163,7 @@ func TestHandler_GetDriverVersion(t *testing.T) {
 			}
 
 			// Call the method being tested
-			got, err := h.GetDriverVersion(context.Background(), nil, nil...)
+			got, err := GetDriverVersion(context.Background(), h, nil, nil...)
 
 			// Check for error match
 			if (err != nil) != tt.wantErr {
@@ -305,7 +305,7 @@ func TestHandler_DeviceDiscovery(t *testing.T) {
 				deviceCache:                 make(map[string]nvml.Device),
 			}
 
-			got, err := h.DeviceDiscovery(context.Background(), nil, nil...)
+			got, err := DeviceDiscovery(context.Background(), h, nil, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.DeviceDiscovery() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -369,7 +369,7 @@ func TestHandler_GetDeviceCount(t *testing.T) {
 			}
 
 			// Call the method being tested
-			got, err := h.GetDeviceCount(context.Background(), nil, nil...)
+			got, err := GetDeviceCount(context.Background(), h, nil, nil...)
 
 			// Check for error match
 			if (err != nil) != tt.wantErr {
@@ -506,7 +506,7 @@ func TestHandler_GetDeviceTemperature(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceTemperature(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetDeviceTemperature(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDeviceTemperature() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -640,7 +640,7 @@ func TestHandler_GetDeviceSerial(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceSerial(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetDeviceSerial(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDeviceSerial() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -774,7 +774,7 @@ func TestHandler_GetDeviceFanSpeed(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceFanSpeed(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetDeviceFanSpeed(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDeviceFanSpeed() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -908,7 +908,7 @@ func TestHandler_GetDevicePerfState(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDevicePerfState(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetDevicePerfState(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDevicePerfState() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1042,7 +1042,7 @@ func TestHandler_GetDeviceEnergyConsumption(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceEnergyConsumption(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetDeviceEnergyConsumption(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDeviceEnergyConsumption() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1176,7 +1176,7 @@ func TestHandler_GetDevicePowerLimit(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDevicePowerLimit(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetDevicePowerLimit(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDevicePowerLimit() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1310,7 +1310,7 @@ func TestHandler_GetDevicePowerUsage(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDevicePowerUsage(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetDevicePowerUsage(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDevicePowerUsage() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1456,7 +1456,7 @@ func TestHandler_GetBAR1MemoryInfo(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetBAR1MemoryInfo(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetBAR1MemoryInfo(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetBAR1MemoryInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1639,7 +1639,7 @@ func TestHandler_GetFBMemoryInfo(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetFBMemoryInfo(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetFBMemoryInfo(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetFBMemoryInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1821,7 +1821,7 @@ func TestHandler_GetMemoryErrors(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetMemoryErrors(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetMemoryErrors(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetMemoryErrors() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2003,7 +2003,7 @@ func TestHandler_GetRegistryErrors(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetRegisterErrors(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetRegisterErrors(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetRegisterErrors() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2170,7 +2170,7 @@ func TestHandler_GetPCIeThroughput(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetPCIeThroughput(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetPCIeThroughput(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetPCIeThroughput() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2308,7 +2308,7 @@ func TestHandler_GetEncoderStats(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetEncoderStats(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetEncoderStats(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetEncoderStats() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2444,7 +2444,7 @@ func TestHandler_GetVideoFrequency(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetVideoFrequency(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetVideoFrequency(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetVideoFrequency() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2580,7 +2580,7 @@ func TestHandler_GetGraphicsFrequency(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetGraphicsFrequency(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetGraphicsFrequency(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetGraphicsFrequency() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2716,7 +2716,7 @@ func TestHandler_GetSMFrequency(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetSMFrequency(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetSMFrequency(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetSMFrequency() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2852,7 +2852,7 @@ func TestHandler_GetMemoryFrequency(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetMemoryFrequency(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetMemoryFrequency(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetMemoryFrequency() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -2986,7 +2986,7 @@ func TestHandler_GetEncoderUtilization(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetEncoderUtilization(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetEncoderUtilization(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetEncoderUtilization() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -3120,7 +3120,7 @@ func TestHandler_GetDecoderUtilization(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDecoderUtilization(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetDecoderUtilization(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetDecoderUtilization() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -3254,7 +3254,7 @@ func TestHandler_GetDeviceUtilisation(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetDeviceUtilisation(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetDeviceUtilisation(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetUtilizationRates() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -3388,7 +3388,7 @@ func TestHandler_GetECCMode(t *testing.T) {
 				deviceCache:    make(map[string]nvml.Device),
 			}
 
-			got, err := h.GetECCMode(context.Background(), tt.args.metricParams, nil...)
+			got, err := GetECCMode(context.Background(), h, tt.args.metricParams, nil...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Handler.GetECCMode() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -3462,14 +3462,19 @@ func TestWithJSONResponse(t *testing.T) {
 			t.Parallel()
 
 			got, err := WithJSONResponse(
-				func(ctx context.Context, metricParams map[string]string, extraParams ...string) (any, error) {
+				func(
+					ctx context.Context,
+					h *Handler,
+					metricParams map[string]string,
+					extraParams ...string,
+				) (any, error) {
 					if tt.args.gotErr {
 						return nil, errs.New("fail")
 					}
 
 					return tt.args.value, nil
 				},
-			)(context.Background(), nil)
+			)(context.Background(), nil, nil)
 
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("WithJSONResponse() error = %v, wantErr %v", err, tt.wantErr)

@@ -30,33 +30,34 @@ import (
 
 var (
 	_ HandlerFunc = WithJSONResponse(nil)
-	_ HandlerFunc = (*Handler)(nil).GetNVMLVersion
-	_ HandlerFunc = (*Handler)(nil).GetBAR1MemoryInfo
-	_ HandlerFunc = (*Handler)(nil).GetDecoderUtilization
-	_ HandlerFunc = (*Handler)(nil).GetDeviceCount
-	_ HandlerFunc = (*Handler)(nil).GetDeviceEnergyConsumption
-	_ HandlerFunc = (*Handler)(nil).GetDeviceFanSpeed
-	_ HandlerFunc = (*Handler)(nil).GetDevicePerfState
-	_ HandlerFunc = (*Handler)(nil).GetDevicePowerLimit
-	_ HandlerFunc = (*Handler)(nil).GetDevicePowerUsage
-	_ HandlerFunc = (*Handler)(nil).GetDeviceSerial
-	_ HandlerFunc = (*Handler)(nil).GetDeviceTemperature
-	_ HandlerFunc = (*Handler)(nil).GetDriverVersion
-	_ HandlerFunc = (*Handler)(nil).GetEncoderStats
-	_ HandlerFunc = (*Handler)(nil).GetEncoderUtilization
-	_ HandlerFunc = (*Handler)(nil).GetFBMemoryInfo
-	_ HandlerFunc = (*Handler)(nil).GetGraphicsFrequency
-	_ HandlerFunc = (*Handler)(nil).GetMemoryErrors
-	_ HandlerFunc = (*Handler)(nil).GetMemoryFrequency
-	_ HandlerFunc = (*Handler)(nil).GetPCIeThroughput
-	_ HandlerFunc = (*Handler)(nil).GetRegisterErrors
-	_ HandlerFunc = (*Handler)(nil).GetVideoFrequency
-	_ HandlerFunc = (*Handler)(nil).GetSMFrequency
+	_ HandlerFunc = GetNVMLVersion
+	_ HandlerFunc = GetBAR1MemoryInfo
+	_ HandlerFunc = GetDecoderUtilization
+	_ HandlerFunc = GetDeviceCount
+	_ HandlerFunc = GetDeviceEnergyConsumption
+	_ HandlerFunc = GetDeviceFanSpeed
+	_ HandlerFunc = GetDevicePerfState
+	_ HandlerFunc = GetDevicePowerLimit
+	_ HandlerFunc = GetDevicePowerUsage
+	_ HandlerFunc = GetDeviceSerial
+	_ HandlerFunc = GetDeviceTemperature
+	_ HandlerFunc = GetDriverVersion
+	_ HandlerFunc = GetEncoderStats
+	_ HandlerFunc = GetEncoderUtilization
+	_ HandlerFunc = GetFBMemoryInfo
+	_ HandlerFunc = GetGraphicsFrequency
+	_ HandlerFunc = GetMemoryErrors
+	_ HandlerFunc = GetMemoryFrequency
+	_ HandlerFunc = GetPCIeThroughput
+	_ HandlerFunc = GetRegisterErrors
+	_ HandlerFunc = GetVideoFrequency
+	_ HandlerFunc = GetSMFrequency
 )
 
 // HandlerFunc describes the signature all metric handler functions must have.
 type HandlerFunc func(
 	ctx context.Context,
+	h *Handler,
 	metricParams map[string]string,
 	extraParams ...string,
 ) (any, error)
@@ -118,7 +119,7 @@ func New(nvmlRunner nvml.Runner) *Handler {
 }
 
 // GetNVMLVersion returns local NVML version.
-func (h *Handler) GetNVMLVersion(_ context.Context, _ map[string]string, _ ...string) (any, error) {
+func GetNVMLVersion(_ context.Context, h *Handler, _ map[string]string, _ ...string) (any, error) {
 	version, err := h.nvmlRunner.GetNVMLVersion()
 	if err != nil {
 		return "", errs.Wrap(err, "failed to get NVML version")
@@ -128,7 +129,7 @@ func (h *Handler) GetNVMLVersion(_ context.Context, _ map[string]string, _ ...st
 }
 
 // GetDriverVersion returns local graphics driver version.
-func (h *Handler) GetDriverVersion(_ context.Context, _ map[string]string, _ ...string) (any, error) {
+func GetDriverVersion(_ context.Context, h *Handler, _ map[string]string, _ ...string) (any, error) {
 	version, err := h.nvmlRunner.GetDriverVersion()
 	if err != nil {
 		return "", errs.Wrap(err, "failed to get driver version")
@@ -138,7 +139,7 @@ func (h *Handler) GetDriverVersion(_ context.Context, _ map[string]string, _ ...
 }
 
 // DeviceDiscovery discovers devices and returns UUIDs and names of devices.
-func (h *Handler) DeviceDiscovery(ctx context.Context, _ map[string]string, _ ...string) (any, error) {
+func DeviceDiscovery(ctx context.Context, h *Handler, _ map[string]string, _ ...string) (any, error) {
 	deviceCount, err := h.nvmlRunner.GetDeviceCountV2()
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to get device count")
@@ -210,7 +211,7 @@ func (h *Handler) DeviceDiscovery(ctx context.Context, _ map[string]string, _ ..
 }
 
 // GetDeviceCount returns count of gpu's.
-func (h *Handler) GetDeviceCount(_ context.Context, _ map[string]string, _ ...string) (any, error) {
+func GetDeviceCount(_ context.Context, h *Handler, _ map[string]string, _ ...string) (any, error) {
 	deviceCount, err := h.nvmlRunner.GetDeviceCountV2()
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to get device count")
@@ -220,7 +221,7 @@ func (h *Handler) GetDeviceCount(_ context.Context, _ map[string]string, _ ...st
 }
 
 // GetDeviceTemperature returns remperature of gpu by UUID.
-func (h *Handler) GetDeviceTemperature(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetDeviceTemperature(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -240,7 +241,7 @@ func (h *Handler) GetDeviceTemperature(_ context.Context, metricParams map[strin
 }
 
 // GetDeviceSerial returns serial number of gpu by UUID.
-func (h *Handler) GetDeviceSerial(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetDeviceSerial(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -260,7 +261,7 @@ func (h *Handler) GetDeviceSerial(_ context.Context, metricParams map[string]str
 }
 
 // GetDeviceFanSpeed returns gpu fan by UUID.
-func (h *Handler) GetDeviceFanSpeed(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetDeviceFanSpeed(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -280,7 +281,7 @@ func (h *Handler) GetDeviceFanSpeed(_ context.Context, metricParams map[string]s
 }
 
 // GetDevicePerfState returns gpu performance state in range (0-15) by UUID.
-func (h *Handler) GetDevicePerfState(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetDevicePerfState(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -300,8 +301,9 @@ func (h *Handler) GetDevicePerfState(_ context.Context, metricParams map[string]
 }
 
 // GetDeviceEnergyConsumption retrieves the total energy consumption of the NVIDIA device in millijoules.
-func (h *Handler) GetDeviceEnergyConsumption(
+func GetDeviceEnergyConsumption(
 	_ context.Context,
+	h *Handler,
 	metricParams map[string]string,
 	_ ...string,
 ) (any, error) {
@@ -324,7 +326,7 @@ func (h *Handler) GetDeviceEnergyConsumption(
 }
 
 // GetDevicePowerLimit retrieves the power management limit of the NVIDIA device in milliwatts.
-func (h *Handler) GetDevicePowerLimit(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetDevicePowerLimit(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -344,7 +346,7 @@ func (h *Handler) GetDevicePowerLimit(_ context.Context, metricParams map[string
 }
 
 // GetDevicePowerUsage retrieves the power usage of the NVIDIA device in milliwatts.
-func (h *Handler) GetDevicePowerUsage(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetDevicePowerUsage(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -364,7 +366,7 @@ func (h *Handler) GetDevicePowerUsage(_ context.Context, metricParams map[string
 }
 
 // GetBAR1MemoryInfo retrieves BAR1 memory information for the NVIDIA device.
-func (h *Handler) GetBAR1MemoryInfo(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetBAR1MemoryInfo(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -384,7 +386,7 @@ func (h *Handler) GetBAR1MemoryInfo(_ context.Context, metricParams map[string]s
 }
 
 // GetFBMemoryInfo retrieves detailed memory information for the NVIDIA device using the NVML v2 interface.
-func (h *Handler) GetFBMemoryInfo(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetFBMemoryInfo(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -409,7 +411,7 @@ func (h *Handler) GetFBMemoryInfo(_ context.Context, metricParams map[string]str
 }
 
 // GetMemoryErrors retrieves the number of corrected and uncorrected ECC errors in memory.
-func (h *Handler) GetMemoryErrors(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetMemoryErrors(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -445,7 +447,7 @@ func (h *Handler) GetMemoryErrors(_ context.Context, metricParams map[string]str
 }
 
 // GetRegisterErrors retrieves the number of corrected and uncorrected ECC errors in register file.
-func (h *Handler) GetRegisterErrors(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetRegisterErrors(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -481,7 +483,7 @@ func (h *Handler) GetRegisterErrors(_ context.Context, metricParams map[string]s
 }
 
 // GetPCIeThroughput retrieves the PCIe receive and transmit throughput for the NVIDIA device in KB/s.
-func (h *Handler) GetPCIeThroughput(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetPCIeThroughput(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -510,7 +512,7 @@ func (h *Handler) GetPCIeThroughput(_ context.Context, metricParams map[string]s
 
 // GetEncoderStats retrieves statistics related to the encoder activity on the device.
 // Metrics are: session count, fps, latency.
-func (h *Handler) GetEncoderStats(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetEncoderStats(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -534,7 +536,7 @@ func (h *Handler) GetEncoderStats(_ context.Context, metricParams map[string]str
 }
 
 // GetVideoFrequency retrieves the clock rate for video encoder/decoder of the NVIDIA device.
-func (h *Handler) GetVideoFrequency(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetVideoFrequency(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -554,7 +556,7 @@ func (h *Handler) GetVideoFrequency(_ context.Context, metricParams map[string]s
 }
 
 // GetGraphicsFrequency retrieves the clock rate for the graphics module of the NVIDIA device.
-func (h *Handler) GetGraphicsFrequency(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetGraphicsFrequency(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -574,7 +576,7 @@ func (h *Handler) GetGraphicsFrequency(_ context.Context, metricParams map[strin
 }
 
 // GetSMFrequency retrieves the clock rate for the specified clock type of the NVIDIA device.
-func (h *Handler) GetSMFrequency(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetSMFrequency(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -594,7 +596,7 @@ func (h *Handler) GetSMFrequency(_ context.Context, metricParams map[string]stri
 }
 
 // GetMemoryFrequency retrieves the clock rate for memory of the NVIDIA device.
-func (h *Handler) GetMemoryFrequency(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetMemoryFrequency(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -614,7 +616,7 @@ func (h *Handler) GetMemoryFrequency(_ context.Context, metricParams map[string]
 }
 
 // GetEncoderUtilization retrieves the encoder utilization statistics for the device.
-func (h *Handler) GetEncoderUtilization(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetEncoderUtilization(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -634,7 +636,7 @@ func (h *Handler) GetEncoderUtilization(_ context.Context, metricParams map[stri
 }
 
 // GetDecoderUtilization retrieves the decoder utilization statistics for the device.
-func (h *Handler) GetDecoderUtilization(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetDecoderUtilization(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -654,7 +656,7 @@ func (h *Handler) GetDecoderUtilization(_ context.Context, metricParams map[stri
 }
 
 // GetDeviceUtilisation collects data about device utilisation.
-func (h *Handler) GetDeviceUtilisation(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetDeviceUtilisation(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -677,7 +679,7 @@ func (h *Handler) GetDeviceUtilisation(_ context.Context, metricParams map[strin
 }
 
 // GetECCMode collects data about gpu ECC mode.
-func (h *Handler) GetECCMode(_ context.Context, metricParams map[string]string, _ ...string) (any, error) {
+func GetECCMode(_ context.Context, h *Handler, metricParams map[string]string, _ ...string) (any, error) {
 	uuid, ok := metricParams[params.DeviceUUIDParamName]
 	if !ok {
 		return nil, errs.New("failed to find param for UUID")
@@ -701,11 +703,11 @@ func (h *Handler) GetECCMode(_ context.Context, metricParams map[string]string, 
 
 // WithJSONResponse wraps a handler function, marshaling its response
 // to a JSON object and returning it as string.
-func WithJSONResponse(handler HandlerFunc) HandlerFunc {
+func WithJSONResponse(handlerFN HandlerFunc) HandlerFunc {
 	return func(
-		ctx context.Context, metricParams map[string]string, extraParams ...string,
+		ctx context.Context, h *Handler, metricParams map[string]string, extraParams ...string,
 	) (any, error) {
-		res, err := handler(ctx, metricParams, extraParams...)
+		res, err := handlerFN(ctx, h, metricParams, extraParams...)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to receive the result")
 		}

@@ -65,13 +65,11 @@ func NewNVMLRunner() (*NVMLRunner, error) {
 		return nil, err
 	}
 
-	runner := &NVMLRunner{
+	return &NVMLRunner{
 		dynamicLib:  dynamicLib,
 		procListMux: &sync.Mutex{},
 		procList:    make(map[string]struct{}),
-	}
-
-	return runner, nil
+	}, nil
 }
 
 // Init initializes the NVML library using the older NVML interface.
