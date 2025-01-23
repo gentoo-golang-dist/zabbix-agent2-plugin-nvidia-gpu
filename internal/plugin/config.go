@@ -52,12 +52,14 @@ func (p *nvmlPlugin) Configure(global *plugin.GlobalOptions, options any) {
 // Returns an error if validation of a plugin's configuration is failed.
 // Also tries to initilizes the NVML runner.
 func (p *nvmlPlugin) Validate(options any) error {
-	r, err := p.nvmlInit()
+	err := p.setNvmlRunnerCb(p)
 	if err != nil {
-		return errs.Wrap(err, "failed to validate nvml runner")
+		wrappedErr := errs.Wrap(err, "failed to init NVML runner")
+		p.Logger.Errf("%s", wrappedErr.Error())
+		panic(wrappedErr)
 	}
 
-	err = r.Close()
+	err = p.nvmlRunner.Close()
 	if err != nil {
 		return errs.Wrap(err, "failed to shutdown nvml runner")
 	}

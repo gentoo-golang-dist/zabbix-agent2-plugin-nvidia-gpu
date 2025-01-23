@@ -47,18 +47,31 @@ type nvmlMetric struct {
 
 type nvmlPlugin struct {
 	plugin.Base
-	config     *pluginConfig
-	metrics    map[string]*nvmlMetric
-	nvmlRunner nvml.Runner
-	nvmlInit   func() (nvml.Runner, error)
+	config          *pluginConfig
+	metrics         map[string]*nvmlMetric
+	nvmlRunner      nvml.Runner
+	handler         *handlers.Handler
+	setNvmlRunnerCb func(p *nvmlPlugin) error
+}
+
+func fn(p *nvmlPlugin) error {
+	runner, err := nvml.NewNVMLRunner()
+	if err != nil {
+		return errs.Wrap(err, "failed to create new nvml runner")
+	}
+
+	p.nvmlRunner = runner
+
+	return nil
 }
 
 // Launch launches the NVIDIA plugin. Blocks until plugin execution has
 // finished.
 func Launch() error {
-	p := &nvmlPlugin{
-		nvmlInit: nvml.NewNVMLRunner,
-	}
+	p := &nvmlPlugin{}
+
+	p.setNvmlRunnerCb = fn
+	p.handler = &handlers.Handler{}
 
 	err := p.registerMetrics()
 	if err != nil {
@@ -84,9 +97,9 @@ func Launch() error {
 func (p *nvmlPlugin) Start() {
 	p.Logger.Infof("Start called")
 
-	var err error
+	p.handler = handlers.New(p.nvmlRunner)
 
-	p.nvmlRunner, err = p.nvmlInit()
+	err := p.setNvmlRunnerCb(p)
 	if err != nil {
 		wrappedErr := errs.Wrap(err, "failed to init NVML runner")
 		p.Logger.Errf("%s", wrappedErr.Error())
@@ -159,8 +172,6 @@ func (p *nvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.Con
 }
 
 func (p *nvmlPlugin) registerMetrics() error {
-	handler := handlers.New(p.nvmlRunner)
-
 	p.metrics = map[string]*nvmlMetric{
 		"nvml.version": {
 			metric: metric.New(
@@ -168,7 +179,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				nil,
 				false,
 			),
-			handler: handler.GetNVMLVersion,
+			handler: p.handler.GetNVMLVersion,
 		},
 		"nvml.system.driver.version": {
 			metric: metric.New(
@@ -176,7 +187,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				nil,
 				false,
 			),
-			handler: handler.GetDriverVersion,
+			handler: p.handler.GetDriverVersion,
 		},
 		"nvml.device.get": {
 			metric: metric.New(
@@ -185,7 +196,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.DeviceDiscovery,
+				p.handler.DeviceDiscovery,
 			),
 		},
 		"nvml.device.count": {
@@ -194,7 +205,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				nil,
 				false,
 			),
-			handler: handler.GetDeviceCount,
+			handler: p.handler.GetDeviceCount,
 		},
 		"nvml.device.temperature": {
 			metric: metric.New(
@@ -202,7 +213,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetDeviceTemperature,
+			handler: p.handler.GetDeviceTemperature,
 		},
 		"nvml.device.serial": {
 			metric: metric.New(
@@ -210,7 +221,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetDeviceSerial,
+			handler: p.handler.GetDeviceSerial,
 		},
 		"nvml.device.fan.speed.avg": {
 			metric: metric.New(
@@ -218,7 +229,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetDeviceFanSpeed,
+			handler: p.handler.GetDeviceFanSpeed,
 		},
 		"nvml.device.performance.state": {
 			metric: metric.New(
@@ -226,7 +237,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetDevicePerfState,
+			handler: p.handler.GetDevicePerfState,
 		},
 		"nvml.device.energy.consumption": {
 			metric: metric.New(
@@ -234,7 +245,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetDeviceEnergyConsumption,
+			handler: p.handler.GetDeviceEnergyConsumption,
 		},
 		"nvml.device.power.limit": {
 			metric: metric.New(
@@ -242,7 +253,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetDevicePowerLimit,
+			handler: p.handler.GetDevicePowerLimit,
 		},
 		"nvml.device.power.usage": {
 			metric: metric.New(
@@ -250,7 +261,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetDevicePowerUsage,
+			handler: p.handler.GetDevicePowerUsage,
 		},
 		"nvml.device.memory.bar1.get": {
 			metric: metric.New(
@@ -259,7 +270,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.GetBAR1MemoryInfo,
+				p.handler.GetBAR1MemoryInfo,
 			),
 		},
 		"nvml.device.memory.fb.get": {
@@ -269,7 +280,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.GetFBMemoryInfo,
+				p.handler.GetFBMemoryInfo,
 			),
 		},
 		"nvml.device.errors.memory": {
@@ -279,7 +290,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.GetMemoryErrors,
+				p.handler.GetMemoryErrors,
 			),
 		},
 		"nvml.device.errors.register": {
@@ -289,7 +300,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.GetRegisterErrors,
+				p.handler.GetRegisterErrors,
 			),
 		},
 		"nvml.device.pci.utilization": {
@@ -299,7 +310,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.GetPCIeThroughput,
+				p.handler.GetPCIeThroughput,
 			),
 		},
 		"nvml.device.encoder.stats.get": {
@@ -309,7 +320,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.GetEncoderStats,
+				p.handler.GetEncoderStats,
 			),
 		},
 		"nvml.device.video.frequency": {
@@ -318,7 +329,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetVideoFrequency,
+			handler: p.handler.GetVideoFrequency,
 		},
 		"nvml.device.graphics.frequency": {
 			metric: metric.New(
@@ -326,7 +337,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetGraphicsFrequency,
+			handler: p.handler.GetGraphicsFrequency,
 		},
 		"nvml.device.sm.frequency": {
 			metric: metric.New(
@@ -334,7 +345,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetSMFrequency,
+			handler: p.handler.GetSMFrequency,
 		},
 		"nvml.device.memory.frequency": {
 			metric: metric.New(
@@ -342,7 +353,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetMemoryFrequency,
+			handler: p.handler.GetMemoryFrequency,
 		},
 		"nvml.device.encoder.utilization": {
 			metric: metric.New(
@@ -350,7 +361,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetEncoderUtilization,
+			handler: p.handler.GetEncoderUtilization,
 		},
 		"nvml.device.decoder.utilization": {
 			metric: metric.New(
@@ -358,7 +369,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				params.Params,
 				false,
 			),
-			handler: handler.GetDecoderUtilization,
+			handler: p.handler.GetDecoderUtilization,
 		},
 		"nvml.device.utilization": {
 			metric: metric.New(
@@ -367,7 +378,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.GetDeviceUtilisation,
+				p.handler.GetDeviceUtilisation,
 			),
 		},
 		"nvml.device.ecc.mode": {
@@ -377,7 +388,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 				false,
 			),
 			handler: handlers.WithJSONResponse(
-				handler.GetECCMode,
+				p.handler.GetECCMode,
 			),
 		},
 	}

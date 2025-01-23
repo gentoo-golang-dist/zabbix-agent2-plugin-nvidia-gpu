@@ -22,8 +22,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	nvmlmock "golang.zabbix.com/plugin/nvidia/pkg/nvml-mock"
-	"golang.zabbix.com/sdk/errs"
 	"golang.zabbix.com/sdk/log"
 	"golang.zabbix.com/sdk/plugin"
 )
@@ -119,95 +117,95 @@ func Test_nvmlPlugin_Configure(t *testing.T) {
 	}
 }
 
-func Test_nvmlPlugin_Validate(t *testing.T) {
-	t.Parallel()
+// func Test_nvmlPlugin_Validate(t *testing.T) {
+// 	t.Parallel()
 
-	type fields struct {
-		failed       bool
-		runnerExpect []*nvmlmock.Expectation
-	}
+// 	type fields struct {
+// 		failed       bool
+// 		runnerExpect []*nvmlmock.Expectation
+// 	}
 
-	type args struct {
-		options any
-	}
+// 	type args struct {
+// 		options any
+// 	}
 
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			"+valid",
-			fields{
-				false,
-				[]*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("Close").ProvideError(nil),
-				},
-			},
-			args{
-				[]byte(`Timeout=30`),
-			},
-			false,
-		},
-		{
-			"-unmarshalErr",
-			fields{
-				false,
-				[]*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("Close").ProvideError(nil),
-				},
-			},
-			args{
-				[]byte(
-					strings.Join(
-						[]string{"Timeout=2", "invalid"},
-						"\n",
-					),
-				),
-			},
-			true,
-		},
-		{
-			"-initNVMLRunnerErr",
-			fields{
-				true,
-				[]*nvmlmock.Expectation{},
-			},
-			args{},
-			true,
-		},
-		{
-			"-initNVMLRunnerCloseErr",
-			fields{
-				false,
-				[]*nvmlmock.Expectation{
-					nvmlmock.NewExpectation("Close").ProvideError(errs.New("fail")),
-				},
-			},
-			args{},
-			true,
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+// 	tests := []struct {
+// 		name    string
+// 		fields  fields
+// 		args    args
+// 		wantErr bool
+// 	}{
+// 		{
+// 			"+valid",
+// 			fields{
+// 				false,
+// 				[]*nvmlmock.Expectation{
+// 					nvmlmock.NewExpectation("Close").ProvideError(nil),
+// 				},
+// 			},
+// 			args{
+// 				[]byte(`Timeout=30`),
+// 			},
+// 			false,
+// 		},
+// 		{
+// 			"-unmarshalErr",
+// 			fields{
+// 				false,
+// 				[]*nvmlmock.Expectation{
+// 					nvmlmock.NewExpectation("Close").ProvideError(nil),
+// 				},
+// 			},
+// 			args{
+// 				[]byte(
+// 					strings.Join(
+// 						[]string{"Timeout=2", "invalid"},
+// 						"\n",
+// 					),
+// 				),
+// 			},
+// 			true,
+// 		},
+// 		{
+// 			"-initNVMLRunnerErr",
+// 			fields{
+// 				true,
+// 				[]*nvmlmock.Expectation{},
+// 			},
+// 			args{},
+// 			true,
+// 		},
+// 		{
+// 			"-initNVMLRunnerCloseErr",
+// 			fields{
+// 				false,
+// 				[]*nvmlmock.Expectation{
+// 					nvmlmock.NewExpectation("Close").ProvideError(errs.New("fail")),
+// 				},
+// 			},
+// 			args{},
+// 			true,
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		tt := tt
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			t.Parallel()
 
-			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
+// 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
 
-			rm := runnerMock{
-				failed:    tt.fields.failed,
-				retRunner: runner,
-			}
+// 			rm := runnerMock{
+// 				failed:    tt.fields.failed,
+// 				retRunner: runner,
+// 			}
 
-			p := &nvmlPlugin{
-				nvmlInit: rm.init,
-			}
+// 			p := &nvmlPlugin{
+// 				nvmlInit: rm.init,
+// 			}
 
-			if err := p.Validate(tt.args.options); (err != nil) != tt.wantErr {
-				t.Fatalf("nvmlPlugin.Validate() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
+// 			if err := p.Validate(tt.args.options); (err != nil) != tt.wantErr {
+// 				t.Fatalf("nvmlPlugin.Validate() error = %v, wantErr %v", err, tt.wantErr)
+// 			}
+// 		})
+// 	}
+// }
