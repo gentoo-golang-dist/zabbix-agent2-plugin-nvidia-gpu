@@ -24,7 +24,6 @@ import (
 )
 
 type pluginConfig struct {
-	plugin.SystemOptions `conf:"optional,name=System"`
 	// Timeout is plugin connection timeout.
 	Timeout int `conf:"optional,range=1:30"`
 }
@@ -34,7 +33,7 @@ type pluginConfig struct {
 func (p *nvmlPlugin) Configure(global *plugin.GlobalOptions, options any) {
 	pConfig := &pluginConfig{}
 
-	err := conf.Unmarshal(options, pConfig)
+	err := conf.UnmarshalStrict(options, pConfig)
 	if err != nil {
 		p.Errf("cannot unmarshal configuration options: %s", err.Error())
 
@@ -62,7 +61,7 @@ func (p *nvmlPlugin) Validate(options any) error {
 		return errs.Wrap(err, "failed to shutdown nvml runner")
 	}
 
-	err = conf.Unmarshal(options, &pluginConfig{})
+	err = conf.UnmarshalStrict(options, &pluginConfig{})
 	if err != nil {
 		return errs.Wrap(err, "failed to unmarshal configuration options")
 	}
