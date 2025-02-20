@@ -64,7 +64,7 @@ type HandlerFunc func(
 // Handler hold client and syscall implementation for request functions.
 type Handler struct {
 	concurrentDeviceDiscoveries int
-	nvmlRunner                  nvml.Runner
+	nvmlRunner                  *nvml.Runner
 	deviceCacheMux              *sync.Mutex
 	deviceCache                 map[string]nvml.Device
 }
@@ -107,7 +107,7 @@ type ECCMode struct {
 }
 
 // New creates a new handler with initialized clients for system and tcp calls.
-func New(nvmlRunner nvml.Runner) *Handler {
+func New(nvmlRunner *nvml.Runner) *Handler {
 	return &Handler{
 		// negative indicates no limit
 		concurrentDeviceDiscoveries: -1,
@@ -119,7 +119,7 @@ func New(nvmlRunner nvml.Runner) *Handler {
 
 // GetNVMLVersion returns local NVML version.
 func (h *Handler) GetNVMLVersion(_ context.Context, _ map[string]string, _ ...string) (any, error) {
-	version, err := h.nvmlRunner.GetNVMLVersion()
+	version, err := (*h.nvmlRunner).GetNVMLVersion()
 	if err != nil {
 		return "", errs.Wrap(err, "failed to get NVML version")
 	}
@@ -129,7 +129,7 @@ func (h *Handler) GetNVMLVersion(_ context.Context, _ map[string]string, _ ...st
 
 // GetDriverVersion returns local graphics driver version.
 func (h *Handler) GetDriverVersion(_ context.Context, _ map[string]string, _ ...string) (any, error) {
-	version, err := h.nvmlRunner.GetDriverVersion()
+	version, err := (*h.nvmlRunner).GetDriverVersion()
 	if err != nil {
 		return "", errs.Wrap(err, "failed to get driver version")
 	}
@@ -139,7 +139,7 @@ func (h *Handler) GetDriverVersion(_ context.Context, _ map[string]string, _ ...
 
 // DeviceDiscovery discovers devices and returns UUIDs and names of devices.
 func (h *Handler) DeviceDiscovery(ctx context.Context, _ map[string]string, _ ...string) (any, error) {
-	deviceCount, err := h.nvmlRunner.GetDeviceCountV2()
+	deviceCount, err := (*h.nvmlRunner).GetDeviceCountV2()
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to get device count")
 	}
@@ -165,7 +165,7 @@ func (h *Handler) DeviceDiscovery(ctx context.Context, _ map[string]string, _ ..
 			default:
 			}
 
-			device, err := h.nvmlRunner.GetDeviceByIndexV2(i) //nolint:govet
+			device, err := (*h.nvmlRunner).GetDeviceByIndexV2(i) //nolint:govet
 			if err != nil {
 				return errs.Wrap(err, "failed to get device by index")
 			}
@@ -211,7 +211,7 @@ func (h *Handler) DeviceDiscovery(ctx context.Context, _ map[string]string, _ ..
 
 // GetDeviceCount returns count of gpu's.
 func (h *Handler) GetDeviceCount(_ context.Context, _ map[string]string, _ ...string) (any, error) {
-	deviceCount, err := h.nvmlRunner.GetDeviceCountV2()
+	deviceCount, err := (*h.nvmlRunner).GetDeviceCountV2()
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to get device count")
 	}
@@ -733,7 +733,7 @@ func (h *Handler) getDeviceByUUID(uuid string) (nvml.Device, error) {
 		return device, nil
 	}
 
-	device, err := h.nvmlRunner.GetDeviceByUUID(uuid)
+	device, err := (*h.nvmlRunner).GetDeviceByUUID(uuid)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to get device by UUID")
 	}

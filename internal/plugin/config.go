@@ -50,11 +50,17 @@ func (p *nvmlPlugin) Configure(global *plugin.GlobalOptions, options any) {
 
 // Validate implements the Configurator interface.
 // Returns an error if validation of a plugin's configuration is failed.
-func (*nvmlPlugin) Validate(options any) error {
+func (p *nvmlPlugin) Validate(options any) error {
 	err := conf.Unmarshal(options, &pluginConfig{})
 	if err != nil {
 		return errs.Wrap(err, "failed to unmarshal configuration options")
 	}
+
+	runner, err := p.getNVMLRunner()
+	if err != nil {
+		return errs.Wrap(err, "failed to load NVML library")
+	}
+	defer runner.Close()
 
 	return nil
 }
