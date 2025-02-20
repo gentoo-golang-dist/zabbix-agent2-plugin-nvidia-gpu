@@ -211,6 +211,12 @@ func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (Device, error) {
 		return nil, errs.Wrap(err, "failed to verify existence of NVML symbol")
 	}
 
+	// +1 accounts for terminator sign that is going to be added in the next step.
+	if len(uuid)+1 > deviceUUIDBufferSize {
+		return nil, errs.New("UUID string too long")
+	}
+
+	// Adds terminator sign inside
 	cUUID := C.CString(uuid)
 
 	defer C.free(unsafe.Pointer(cUUID)) //nolint:nlreturn

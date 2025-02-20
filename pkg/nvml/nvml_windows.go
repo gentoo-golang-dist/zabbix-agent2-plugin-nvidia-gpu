@@ -170,13 +170,14 @@ func (runner *NVMLRunner) GetDeviceByIndexV2(index uint) (Device, error) {
 func (runner *NVMLRunner) GetDeviceByUUID(uuid string) (Device, error) {
 	var deviceHandle uintptr
 
+	// Adds terminator sign
 	cUUID, err := windows.ByteSliceFromString(uuid)
 	if err != nil {
-		return nil, errs.Wrap(err, "uuid contains terminator sign")
+		return nil, errs.Wrap(err, "UUID contains terminator sign")
 	}
 
 	if len(cUUID) > deviceUUIDBufferSize {
-		return nil, errs.New("uuid string too long")
+		return nil, errs.New("UUID string too long")
 	}
 
 	err = runner.callProc("nvmlDeviceGetHandleByUUID",
