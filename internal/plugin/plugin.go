@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"golang.zabbix.com/plugin/nvidia/internal/plugin/handlers"
-	"golang.zabbix.com/plugin/nvidia/internal/plugin/params"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
 	"golang.zabbix.com/sdk/errs"
 	"golang.zabbix.com/sdk/metric"
@@ -47,24 +46,19 @@ type nvmlMetric struct {
 
 type nvmlPlugin struct {
 	plugin.Base
-	config     *pluginConfig
-	metrics    map[string]*nvmlMetric
-	nvmlRunner nvml.Runner
+	config        *pluginConfig
+	metrics       map[string]*nvmlMetric
+	nvmlRunner    nvml.Runner
+	setNvmlRunner func() error
 }
 
 // Launch launches the NVIDIA plugin. Blocks until plugin execution has
 // finished.
 func Launch() error {
-	runner, err := nvml.NewNVMLRunner()
-	if err != nil {
-		return errs.Wrap(err, "failed to create new nvml runner")
-	}
+	p := &nvmlPlugin{}
+	p.setNvmlRunner = p.setRunner
 
-	p := &nvmlPlugin{
-		nvmlRunner: runner,
-	}
-
-	err = p.registerMetrics()
+	err := p.registerMetrics()
 	if err != nil {
 		return errs.Wrap(err, "failed to register metrics")
 	}
@@ -73,8 +67,6 @@ func Launch() error {
 	if err != nil {
 		return errs.Wrap(err, "failed to create new handler")
 	}
-
-	defer p.nvmlRunner.Close() //nolint:errcheck
 
 	p.Logger = h
 
@@ -90,8 +82,18 @@ func Launch() error {
 func (p *nvmlPlugin) Start() {
 	p.Logger.Infof("Start called")
 
+	// this is needed for testing purposes, no way to mock it unless it's a callback, and can not pass it as a parameter
+	// since Start is needed for plugin runner interface.
+	err := p.setNvmlRunner()
+	if err != nil {
+		wrappedErr := errs.Wrap(err, "failed to init NVML runner")
+		p.Logger.Errf("%s", wrappedErr.Error())
+		panic(wrappedErr)
+	}
+
+	p.setMetricFunctions()
 	// Try to initialize NVML using InitV2, fallback to Init if it fails
-	err := p.nvmlRunner.InitV2()
+	err = p.nvmlRunner.InitV2()
 	if err != nil {
 		p.Logger.Debugf("failed to init runner with InitNVMLv2: %s", err.Error())
 
@@ -112,6 +114,11 @@ func (p *nvmlPlugin) Stop() {
 	err := p.nvmlRunner.ShutdownNVML()
 	if err != nil {
 		p.Logger.Errf("failed to shutdown nvml %s", err.Error())
+	}
+
+	err = p.nvmlRunner.Close()
+	if err != nil {
+		p.Logger.Errf("failed to shutdown nvml runner %s", err.Error())
 	}
 }
 
@@ -150,240 +157,13 @@ func (p *nvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.Con
 	return res, nil
 }
 
-func (p *nvmlPlugin) registerMetrics() error {
-	handler := handlers.New(p.nvmlRunner)
-
-	p.metrics = map[string]*nvmlMetric{
-		"nvml.version": {
-			metric: metric.New(
-				"Returns local NVML version.",
-				nil,
-				false,
-			),
-			handler: handler.GetNVMLVersion,
-		},
-		"nvml.system.driver.version": {
-			metric: metric.New(
-				"Returns local NVIDIA driver version.",
-				nil,
-				false,
-			),
-			handler: handler.GetDriverVersion,
-		},
-		"nvml.device.get": {
-			metric: metric.New(
-				"Returns discovered devices.",
-				nil,
-				false,
-			),
-			handler: handlers.WithJSONResponse(
-				handler.DeviceDiscovery,
-			),
-		},
-		"nvml.device.count": {
-			metric: metric.New(
-				"Returns device count.",
-				nil,
-				false,
-			),
-			handler: handler.GetDeviceCount,
-		},
-		"nvml.device.temperature": {
-			metric: metric.New(
-				"Returns device temperature.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetDeviceTemperature,
-		},
-		"nvml.device.serial": {
-			metric: metric.New(
-				"Returns device serial.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetDeviceSerial,
-		},
-		"nvml.device.fan.speed.avg": {
-			metric: metric.New(
-				"Returns device fan speed.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetDeviceFanSpeed,
-		},
-		"nvml.device.performance.state": {
-			metric: metric.New(
-				"Returns device performance state.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetDevicePerfState,
-		},
-		"nvml.device.energy.consumption": {
-			metric: metric.New(
-				"Returns device energy consumption.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetDeviceEnergyConsumption,
-		},
-		"nvml.device.power.limit": {
-			metric: metric.New(
-				"Returns device power management limit.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetDevicePowerLimit,
-		},
-		"nvml.device.power.usage": {
-			metric: metric.New(
-				"Returns device power usage.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetDevicePowerUsage,
-		},
-		"nvml.device.memory.bar1.get": {
-			metric: metric.New(
-				"Returns BAR1 memory info.",
-				params.Params,
-				false,
-			),
-			handler: handlers.WithJSONResponse(
-				handler.GetBAR1MemoryInfo,
-			),
-		},
-		"nvml.device.memory.fb.get": {
-			metric: metric.New(
-				"Returns FB memory info.",
-				params.Params,
-				false,
-			),
-			handler: handlers.WithJSONResponse(
-				handler.GetFBMemoryInfo,
-			),
-		},
-		"nvml.device.errors.memory": {
-			metric: metric.New(
-				"Returns ECC error count in memory.",
-				params.Params,
-				false,
-			),
-			handler: handlers.WithJSONResponse(
-				handler.GetMemoryErrors,
-			),
-		},
-		"nvml.device.errors.register": {
-			metric: metric.New(
-				"Returns ECC error count in register file.",
-				params.Params,
-				false,
-			),
-			handler: handlers.WithJSONResponse(
-				handler.GetRegisterErrors,
-			),
-		},
-		"nvml.device.pci.utilization": {
-			metric: metric.New(
-				"Returns PCIe utilization.",
-				params.Params,
-				false,
-			),
-			handler: handlers.WithJSONResponse(
-				handler.GetPCIeThroughput,
-			),
-		},
-		"nvml.device.encoder.stats.get": {
-			metric: metric.New(
-				"Returns Encoder utilization.",
-				params.Params,
-				false,
-			),
-			handler: handlers.WithJSONResponse(
-				handler.GetEncoderStats,
-			),
-		},
-		"nvml.device.video.frequency": {
-			metric: metric.New(
-				"Returns Video frequency in MHz.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetVideoFrequency,
-		},
-		"nvml.device.graphics.frequency": {
-			metric: metric.New(
-				"Returns Graphics frequency in MHz.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetGraphicsFrequency,
-		},
-		"nvml.device.sm.frequency": {
-			metric: metric.New(
-				"Returns SM frequency in MHz.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetSMFrequency,
-		},
-		"nvml.device.memory.frequency": {
-			metric: metric.New(
-				"Returns Memory frequency in MHz.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetMemoryFrequency,
-		},
-		"nvml.device.encoder.utilization": {
-			metric: metric.New(
-				"Returns Encoder utilization.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetEncoderUtilization,
-		},
-		"nvml.device.decoder.utilization": {
-			metric: metric.New(
-				"Returns Decoder utilization.",
-				params.Params,
-				false,
-			),
-			handler: handler.GetDecoderUtilization,
-		},
-		"nvml.device.utilization": {
-			metric: metric.New(
-				"Returns Device utilization.",
-				params.Params,
-				false,
-			),
-			handler: handlers.WithJSONResponse(
-				handler.GetDeviceUtilisation,
-			),
-		},
-		"nvml.device.ecc.mode": {
-			metric: metric.New(
-				"Returns Device current and pending ECC mode.",
-				params.Params,
-				false,
-			),
-			handler: handlers.WithJSONResponse(
-				handler.GetECCMode,
-			),
-		},
-	}
-
-	metricSet := metric.MetricSet{}
-
-	for k, m := range p.metrics {
-		metricSet[k] = m.metric
-	}
-
-	err := plugin.RegisterMetrics(p, Name, metricSet.List()...)
+func (p *nvmlPlugin) setRunner() error {
+	runner, err := nvml.NewNVMLRunner()
 	if err != nil {
-		return errs.Wrap(err, "failed to register metrics")
+		return errs.Wrap(err, "failed to create new nvml runner")
 	}
+
+	p.nvmlRunner = runner
 
 	return nil
 }

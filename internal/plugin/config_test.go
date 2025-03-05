@@ -22,6 +22,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	nvmlmock "golang.zabbix.com/plugin/nvidia/pkg/nvml-mock"
+	"golang.zabbix.com/sdk/errs"
 	"golang.zabbix.com/sdk/log"
 	"golang.zabbix.com/sdk/plugin"
 )
@@ -116,9 +118,13 @@ func Test_nvmlPlugin_Configure(t *testing.T) {
 		})
 	}
 }
-
 func Test_nvmlPlugin_Validate(t *testing.T) {
 	t.Parallel()
+
+	type fields struct {
+		failed       bool
+		runnerExpect []*nvmlmock.Expectation
+	}
 
 	type args struct {
 		options any
@@ -126,11 +132,18 @@ func Test_nvmlPlugin_Validate(t *testing.T) {
 
 	tests := []struct {
 		name    string
+		fields  fields
 		args    args
 		wantErr bool
 	}{
 		{
 			"+valid",
+			fields{
+				false,
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("Close").ProvideError(nil),
+				},
+			},
 			args{
 				[]byte(`Timeout=30`),
 			},
@@ -138,6 +151,12 @@ func Test_nvmlPlugin_Validate(t *testing.T) {
 		},
 		{
 			"-unmarshalErr",
+			fields{
+				false,
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("Close").ProvideError(nil),
+				},
+			},
 			args{
 				[]byte(
 					strings.Join(
@@ -148,14 +167,44 @@ func Test_nvmlPlugin_Validate(t *testing.T) {
 			},
 			true,
 		},
+		{
+			"-initNVMLRunnerErr",
+			fields{
+				true,
+				[]*nvmlmock.Expectation{},
+			},
+			args{},
+			true,
+		},
+		{
+			"-initNVMLRunnerCloseErr",
+			fields{
+				false,
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("Close").ProvideError(errs.New("fail")),
+				},
+			},
+			args{},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			e := &nvmlPlugin{}
-			if err := e.Validate(tt.args.options); (err != nil) != tt.wantErr {
+			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
+
+			rm := runnerSetMock{
+				failed: tt.fields.failed,
+			}
+
+			p := &nvmlPlugin{
+				nvmlRunner:    runner,
+				setNvmlRunner: rm.init,
+			}
+
+			if err := p.Validate(tt.args.options); (err != nil) != tt.wantErr {
 				t.Fatalf("nvmlPlugin.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
