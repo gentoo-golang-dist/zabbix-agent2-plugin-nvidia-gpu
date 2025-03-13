@@ -37,8 +37,20 @@ type MockCtxProvider struct {
 	timeout int
 }
 
+type runnerSetMock struct {
+	failed bool
+}
+
 func (m *MockCtxProvider) Timeout() int {
 	return m.timeout
+}
+
+func (m runnerSetMock) init() error {
+	if m.failed {
+		return errs.New("fail")
+	}
+
+	return nil
 }
 
 func TestMain(m *testing.M) {
@@ -204,6 +216,7 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 			fields{
 				[]*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("ShutdownNVML").ProvideError(nil),
+					nvmlmock.NewExpectation("Close").ProvideError(nil),
 				},
 			},
 		},
@@ -212,6 +225,25 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 			fields{
 				[]*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("ShutdownNVML").ProvideError(nvml.ErrNotFound),
+					nvmlmock.NewExpectation("Close").ProvideError(nil),
+				},
+			},
+		},
+		{
+			"-nvmlRunnerCloseError",
+			fields{
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("ShutdownNVML").ProvideError(nil),
+					nvmlmock.NewExpectation("Close").ProvideError(errs.New("fail")),
+				},
+			},
+		},
+		{
+			"-allErrors",
+			fields{
+				[]*nvmlmock.Expectation{
+					nvmlmock.NewExpectation("ShutdownNVML").ProvideError(nvml.ErrNotFound),
+					nvmlmock.NewExpectation("Close").ProvideError(errs.New("fail")),
 				},
 			},
 		},
@@ -244,6 +276,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 
 	type fields struct {
 		runnerExpect []*nvmlmock.Expectation
+		failed       bool
 	}
 
 	type expect struct {
@@ -261,6 +294,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 				[]*nvmlmock.Expectation{
 					nvmlmock.NewExpectation("InitV2").ProvideError(nil),
 				},
+				false,
 			},
 			expect{
 				shouldPanic: false,
@@ -273,6 +307,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 					nvmlmock.NewExpectation("InitV2").ProvideError(nvml.ErrFunctionNotFound),
 					nvmlmock.NewExpectation("Init").ProvideError(nil),
 				},
+				false,
 			},
 			expect{
 				shouldPanic: false,
@@ -285,6 +320,17 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 					nvmlmock.NewExpectation("InitV2").ProvideError(nvml.ErrFunctionNotFound),
 					nvmlmock.NewExpectation("Init").ProvideError(nvml.ErrFunctionNotFound),
 				},
+				false,
+			},
+			expect{
+				shouldPanic: true,
+			},
+		},
+		{
+			"-nvmlRunnerInitError",
+			fields{
+				[]*nvmlmock.Expectation{},
+				true,
 			},
 			expect{
 				shouldPanic: true,
@@ -298,8 +344,14 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 			t.Parallel()
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
 
+			rm := runnerSetMock{
+				failed: tt.fields.failed,
+			}
+
 			p := &nvmlPlugin{
-				nvmlRunner: runner,
+				nvmlRunner:    runner,
+				setNvmlRunner: rm.init,
+				metrics:       getMetrics(),
 			}
 
 			p.Logger = log.New("test")
@@ -311,7 +363,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 				}
 
 				if !tt.expect.shouldPanic && r != nil {
-					t.Fatalf("nvmlPlugin.Start() unecpected panic occurred")
+					t.Fatalf("nvmlPlugin.Start() unexpected panic occurred")
 				}
 			}()
 
@@ -322,5 +374,35 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 				t.Fatal("nvmlPlugin.Start() expected calls not done")
 			}
 		})
+	}
+}
+
+func getMetrics() map[string]*nvmlMetric {
+	return map[string]*nvmlMetric{
+		version:           {},
+		driverVersion:     {},
+		devGet:            {},
+		devCount:          {},
+		devTemp:           {},
+		devSerial:         {},
+		devfanSpeedAVG:    {},
+		devPerfState:      {},
+		devEneConsumption: {},
+		devPowerLimit:     {},
+		devPowerUsage:     {},
+		devMemBar1:        {},
+		devMemFBGet:       {},
+		devMemErrors:      {},
+		devRegErrors:      {},
+		devPciUtil:        {},
+		devEncStats:       {},
+		devVidFreq:        {},
+		devGraphFreq:      {},
+		devSMFreq:         {},
+		devMemFreq:        {},
+		devEncoderUtil:    {},
+		devDecoderUtil:    {},
+		devUtil:           {},
+		devEccMode:        {},
 	}
 }
