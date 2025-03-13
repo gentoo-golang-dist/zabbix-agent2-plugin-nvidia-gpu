@@ -214,6 +214,14 @@ func (m *MockRunner) GetDeviceByUUID(uuid string) (nvml.Device, error) {
 	return device, err
 }
 
+// Close is mock function.
+func (m *MockRunner) Close() error {
+	m.t.Helper()
+	_, err := m.handleFunctionCall("Close")
+
+	return err
+}
+
 // handleFunctionCall is handler for mock function calls.
 // Takes in function name and any number of arguments function received.
 func (m *MockRunner) handleFunctionCall(name string, receivedArgs ...any) (*Expectation, error) {
