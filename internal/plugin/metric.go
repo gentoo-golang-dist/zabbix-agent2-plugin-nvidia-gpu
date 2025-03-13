@@ -169,7 +169,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 		},
 		devEncStats: {
 			metric: metric.New(
-				"Returns Encoder utilization.",
+				"Returns Encoder statistics.",
 				params.Params,
 				false,
 			),
