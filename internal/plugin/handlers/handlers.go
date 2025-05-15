@@ -154,9 +154,7 @@ func (h *Handler) DeviceDiscovery(ctx context.Context, _ map[string]string, _ ..
 	group.SetLimit(h.concurrentDeviceDiscoveries)
 
 	// Should be done in parallel
-	for i := uint(0); i < deviceCount; i++ {
-		i := i
-
+	for i := uint(0); i < deviceCount; i++ { //nolint:intrange
 		group.Go(func() error {
 			select {
 			// fails on first discovery error
