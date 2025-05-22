@@ -135,7 +135,6 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -185,7 +184,6 @@ func Test_nvmlPlugin_registerMetrics(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -250,7 +248,6 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
@@ -339,7 +336,6 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)

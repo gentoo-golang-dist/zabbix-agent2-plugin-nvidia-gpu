@@ -25,6 +25,7 @@ import (
 
 type pluginConfig struct {
 	System plugin.SystemOptions `conf:"optional"` //nolint:staticcheck
+
 	// Timeout is plugin connection timeout.
 	Timeout int `conf:"optional,range=1:30"`
 }
