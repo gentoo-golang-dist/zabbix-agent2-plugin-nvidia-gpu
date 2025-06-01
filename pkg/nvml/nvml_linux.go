@@ -667,7 +667,7 @@ func (device *NVMLDevice) GetEccMode() (bool, bool, error) {
 	return currentEnabled, pendingEnabled, nil
 }
 
-// ShutdownNVML is a wrapper function to cleanly shut down NVML
+// ShutdownNVML is a wrapper function to cleanly shut down NVML.
 func (runner *NVMLRunner) ShutdownNVML() error {
 	err := runner.symbolExists("nvmlShutdown")
 	if err != nil {
