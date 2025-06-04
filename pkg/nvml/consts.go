@@ -61,10 +61,10 @@ const (
 
 // Constants for MemoryLocation.
 const (
-	MemoryLocationDevice       MemoryLocation = 0 // Device memory
-	MemoryLocationRegisterFile MemoryLocation = 1 // Register file memory
-	MemoryLocationL1Cache      MemoryLocation = 2 // L1 cache memory
-	MemoryLocationL2Cache      MemoryLocation = 3 // L2 cache memory
+	MemoryLocationL1Cache      MemoryLocation = 0 // L1 cache memory
+	MemoryLocationL2Cache      MemoryLocation = 1 // L2 cache memory
+	MemoryLocationDevice       MemoryLocation = 2 // Device memory
+	MemoryLocationRegisterFile MemoryLocation = 3 // Register file memory
 	// Add more memory locations as needed.
 )
 
