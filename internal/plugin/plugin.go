@@ -80,14 +80,14 @@ func Launch() error {
 
 // Start starts the NVIDIA plugin. Is required for plugin to match runner interface.
 func (p *nvmlPlugin) Start() {
-	p.Logger.Infof("Start called")
+	p.Infof("Start called")
 
 	// this is needed for testing purposes, no way to mock it unless it's a callback, and can not pass it as a parameter
 	// since Start is needed for plugin runner interface.
 	err := p.setNvmlRunner()
 	if err != nil {
 		wrappedErr := errs.Wrap(err, "failed to init NVML runner")
-		p.Logger.Errf("%s", wrappedErr.Error())
+		p.Errf("%s", wrappedErr.Error())
 		panic(wrappedErr)
 	}
 
@@ -95,13 +95,13 @@ func (p *nvmlPlugin) Start() {
 	// Try to initialize NVML using InitV2, fallback to Init if it fails
 	err = p.nvmlRunner.InitV2()
 	if err != nil {
-		p.Logger.Debugf("failed to init runner with InitNVMLv2: %s", err.Error())
+		p.Debugf("failed to init runner with InitNVMLv2: %s", err.Error())
 
 		// Fallback to Init if InitV2 fails
 		err = p.nvmlRunner.Init()
 		if err != nil {
 			wrappedErr := errs.Wrap(err, "failed to init NVML library")
-			p.Logger.Errf("%s", wrappedErr.Error())
+			p.Errf("%s", wrappedErr.Error())
 			panic(wrappedErr)
 		}
 	}
@@ -109,16 +109,16 @@ func (p *nvmlPlugin) Start() {
 
 // Stop stops the NVIDIA plugin. Is required for plugin to match runner interface.
 func (p *nvmlPlugin) Stop() {
-	p.Logger.Infof("Stop called")
+	p.Infof("Stop called")
 
 	err := p.nvmlRunner.ShutdownNVML()
 	if err != nil {
-		p.Logger.Errf("failed to shutdown nvml %s", err.Error())
+		p.Errf("failed to shutdown nvml %s", err.Error())
 	}
 
 	err = p.nvmlRunner.Close()
 	if err != nil {
-		p.Logger.Errf("failed to shutdown nvml runner %s", err.Error())
+		p.Errf("failed to shutdown nvml runner %s", err.Error())
 	}
 }
 

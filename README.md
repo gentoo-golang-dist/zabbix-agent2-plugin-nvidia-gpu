@@ -31,7 +31,7 @@ For information retrieval, the plugin uses NVIDIA's NVML dynamic library. By def
 
 <!-- TOC --><a name="requirements"></a>
 ## Requirements
-- Installed NVIDIA driver.
+Installed NVIDIA driver.
 
 <!-- TOC --><a name="notes"></a>
 ### Notes
@@ -48,7 +48,7 @@ To build the NVIDIA GPU Plugin for Zabbix Agent 2 from source, ensure you have t
 
 <!-- TOC --><a name="prerequisites"></a>
 ### Prerequisites
-- **Go Programming Language**: Version 1.21 or higher.
+- **Go Language**: Version 1.23 or newer (required only for building the plugin from the source).
 - **CGO Enabled**: The build process requires `CGO_ENABLED=1` for proper compilation.
 - **C Compiler**: A C compiler is required for building with `CGO_ENABLED=1`.
 
