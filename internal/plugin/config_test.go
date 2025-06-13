@@ -102,7 +102,7 @@ func Test_nvmlPlugin_Configure(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := &nvmlPlugin{
+			p := &NvmlPlugin{
 				config: tt.fields.config,
 				Base: plugin.Base{
 					Logger: log.New("test"),
@@ -197,13 +197,13 @@ func Test_nvmlPlugin_Validate(t *testing.T) {
 				failed: tt.fields.failed,
 			}
 
-			p := &nvmlPlugin{
+			p := &NvmlPlugin{
 				nvmlRunner:    runner,
 				setNvmlRunner: rm.init,
 			}
 
 			if err := p.Validate(tt.args.options); (err != nil) != tt.wantErr {
-				t.Fatalf("nvmlPlugin.Validate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("NvmlPlugin.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

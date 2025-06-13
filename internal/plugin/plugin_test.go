@@ -138,7 +138,7 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := &nvmlPlugin{
+			p := &NvmlPlugin{
 				metrics: map[string]*nvmlMetric{
 					"test": {
 						metric: metric.New("test metric", testParams, false),
@@ -160,11 +160,11 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 
 			got, err := p.Export(tt.args.key, tt.args.rawParams, &ctxPrvider)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("nvmlPlugin.Export() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("NvmlPlugin.Export() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("nvmlPlugin.Export() = %s", diff)
+				t.Fatalf("NvmlPlugin.Export() = %s", diff)
 			}
 		})
 	}
@@ -187,10 +187,10 @@ func Test_nvmlPlugin_registerMetrics(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := (&nvmlPlugin{}).registerMetrics()
+			err := (&NvmlPlugin{}).registerMetrics()
 			if (err != nil) != tt.wantErr {
 				t.Fatalf(
-					"nvmlPlugin.registerMetrics() error = %v, wantErr %v",
+					"NvmlPlugin.registerMetrics() error = %v, wantErr %v",
 					err, tt.wantErr,
 				)
 			}
@@ -252,7 +252,7 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 			t.Parallel()
 			runner := nvmlmock.NewMockRunner(t).ExpectCalls(tt.fields.runnerExpect...)
 
-			p := &nvmlPlugin{
+			p := &NvmlPlugin{
 				nvmlRunner: runner,
 			}
 
@@ -262,7 +262,7 @@ func Test_nvmlPlugin_Stop(t *testing.T) {
 
 			done := runner.ExpectedCallsDone()
 			if !done {
-				t.Fatal("nvmlPlugin.Stop() expected calls not done")
+				t.Fatal("NvmlPlugin.Stop() expected calls not done")
 			}
 		})
 	}
@@ -344,7 +344,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 				failed: tt.fields.failed,
 			}
 
-			p := &nvmlPlugin{
+			p := &NvmlPlugin{
 				nvmlRunner:    runner,
 				setNvmlRunner: rm.init,
 				metrics:       getMetrics(),
@@ -355,11 +355,11 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 			defer func() {
 				r := recover()
 				if tt.expect.shouldPanic && r == nil {
-					t.Fatalf("nvmlPlugin.Start() expected panic did not occur")
+					t.Fatalf("NvmlPlugin.Start() expected panic did not occur")
 				}
 
 				if !tt.expect.shouldPanic && r != nil {
-					t.Fatalf("nvmlPlugin.Start() unexpected panic occurred")
+					t.Fatalf("NvmlPlugin.Start() unexpected panic occurred")
 				}
 			}()
 
@@ -367,7 +367,7 @@ func Test_nvmlPlugin_Start(t *testing.T) {
 
 			done := runner.ExpectedCallsDone()
 			if !done {
-				t.Fatal("nvmlPlugin.Start() expected calls not done")
+				t.Fatal("NvmlPlugin.Start() expected calls not done")
 			}
 		})
 	}
