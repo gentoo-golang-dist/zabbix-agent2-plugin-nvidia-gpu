@@ -3,6 +3,7 @@ Changes for 8.0.0alpha1
 New features:
 
 Bug fixes:
+...G...... [ZBX-26491] fixed memory and register location counters (esneiders)
 
 --------------------------------------------------------------------------------
 Changes for 7.4.1rc1
@@ -10,6 +11,7 @@ Changes for 7.4.1rc1
 New features:
 
 Bug fixes:
+...G...... [ZBX-26491] fixed memory and register location counters (esneiders)
 
 --------------------------------------------------------------------------------
 Changes for 7.4.0
