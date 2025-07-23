@@ -1,7 +1,5 @@
 Changes for 7.4.1rc1
 
-New features:
-
 Bug fixes:
 ...G...... [ZBX-26491] fixed memory and register location counters (esneiders)
 
