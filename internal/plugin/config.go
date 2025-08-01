@@ -32,7 +32,7 @@ type pluginConfig struct {
 
 // Configure implements the Configurator interface.
 // Initializes configuration structures.
-func (p *nvmlPlugin) Configure(global *plugin.GlobalOptions, options any) {
+func (p *NvmlPlugin) Configure(global *plugin.GlobalOptions, options any) {
 	pConfig := &pluginConfig{}
 
 	err := conf.UnmarshalStrict(options, pConfig)
@@ -52,7 +52,7 @@ func (p *nvmlPlugin) Configure(global *plugin.GlobalOptions, options any) {
 // Validate implements the Configurator interface.
 // Returns an error if validation of a plugin's configuration is failed.
 // Also tries to initilizes the NVML runner.
-func (p *nvmlPlugin) Validate(options any) error {
+func (p *NvmlPlugin) Validate(options any) error {
 	err := p.setNvmlRunner()
 	if err != nil {
 		return errs.Wrap(err, "failed to validate nvml runner")

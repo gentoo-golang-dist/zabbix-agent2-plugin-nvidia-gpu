@@ -53,7 +53,7 @@ const (
 	devEccMode        = "nvml.device.ecc.mode"
 )
 
-func (p *nvmlPlugin) registerMetrics() error {
+func (p *NvmlPlugin) registerMetrics() error {
 	p.metrics = map[string]*nvmlMetric{
 		version: {
 			metric: metric.New(
@@ -246,7 +246,7 @@ func (p *nvmlPlugin) registerMetrics() error {
 	return nil
 }
 
-func (p *nvmlPlugin) setMetricFunctions() {
+func (p *NvmlPlugin) setMetricFunctions() {
 	handler := handlers.New(p.nvmlRunner)
 	p.metrics[version].handler = handler.GetNVMLVersion
 	p.metrics[driverVersion].handler = handler.GetDriverVersion

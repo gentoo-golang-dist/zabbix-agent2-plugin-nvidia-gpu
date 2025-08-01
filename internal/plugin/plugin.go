@@ -24,6 +24,7 @@ import (
 	"golang.zabbix.com/plugin/nvidia/internal/plugin/handlers"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
 	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/log"
 	"golang.zabbix.com/sdk/metric"
 	"golang.zabbix.com/sdk/plugin"
 	"golang.zabbix.com/sdk/plugin/container"
@@ -34,9 +35,9 @@ import (
 const Name = "NVIDIA"
 
 var (
-	_ plugin.Configurator = (*nvmlPlugin)(nil)
-	_ plugin.Exporter     = (*nvmlPlugin)(nil)
-	_ plugin.Runner       = (*nvmlPlugin)(nil)
+	_ plugin.Configurator = (*NvmlPlugin)(nil)
+	_ plugin.Exporter     = (*NvmlPlugin)(nil)
+	_ plugin.Runner       = (*NvmlPlugin)(nil)
 )
 
 type nvmlMetric struct {
@@ -44,7 +45,7 @@ type nvmlMetric struct {
 	handler handlers.HandlerFunc
 }
 
-type nvmlPlugin struct {
+type NvmlPlugin struct {
 	plugin.Base
 	config        *pluginConfig
 	metrics       map[string]*nvmlMetric
@@ -52,17 +53,26 @@ type nvmlPlugin struct {
 	setNvmlRunner func() error
 }
 
-// Launch launches the NVIDIA plugin. Blocks until plugin execution has
-// finished.
-func Launch() error {
-	p := &nvmlPlugin{}
+func New() (*NvmlPlugin, error) {
+	p := &NvmlPlugin{}
 	p.setNvmlRunner = p.setRunner
 
-	err := p.registerMetrics()
+	err := log.Open(log.Console, log.Info, "", 0)
 	if err != nil {
-		return errs.Wrap(err, "failed to register metrics")
+		return nil, errs.Wrap(err, "failed to open log")
 	}
 
+	p.Logger = log.New(Name)
+
+	err = p.registerMetrics()
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to register metrics")
+	}
+	return p, nil
+}
+
+// Run starts the plugin.
+func (p *NvmlPlugin) Run() error {
 	h, err := container.NewHandler(Name)
 	if err != nil {
 		return errs.Wrap(err, "failed to create new handler")
@@ -79,7 +89,7 @@ func Launch() error {
 }
 
 // Start starts the NVIDIA plugin. Is required for plugin to match runner interface.
-func (p *nvmlPlugin) Start() {
+func (p *NvmlPlugin) Start() {
 	p.Infof("Start called")
 
 	// this is needed for testing purposes, no way to mock it unless it's a callback, and can not pass it as a parameter
@@ -108,7 +118,7 @@ func (p *nvmlPlugin) Start() {
 }
 
 // Stop stops the NVIDIA plugin. Is required for plugin to match runner interface.
-func (p *nvmlPlugin) Stop() {
+func (p *NvmlPlugin) Stop() {
 	p.Infof("Stop called")
 
 	err := p.nvmlRunner.ShutdownNVML()
@@ -123,7 +133,7 @@ func (p *nvmlPlugin) Stop() {
 }
 
 // Export collects all the metrics.
-func (p *nvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.ContextProvider) (any, error) {
+func (p *NvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.ContextProvider) (any, error) {
 	m, ok := p.metrics[key]
 	if !ok {
 		return nil, errs.Wrapf(zbxerr.ErrorUnsupportedMetric, "unknown metric %q", key)
@@ -140,7 +150,7 @@ func (p *nvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.Con
 	}
 
 	timeout := time.Second * time.Duration(p.config.Timeout)
-	if timeout < time.Second*time.Duration(pluginCtx.Timeout()) {
+	if pluginCtx != nil && timeout < time.Second*time.Duration(pluginCtx.Timeout()) {
 		timeout = time.Second * time.Duration(pluginCtx.Timeout())
 	}
 
@@ -157,7 +167,7 @@ func (p *nvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.Con
 	return res, nil
 }
 
-func (p *nvmlPlugin) setRunner() error {
+func (p *NvmlPlugin) setRunner() error {
 	runner, err := nvml.NewNVMLRunner()
 	if err != nil {
 		return errs.Wrap(err, "failed to create new nvml runner")

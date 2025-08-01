@@ -6,7 +6,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	golang.org/x/sync v0.14.0
 	golang.org/x/sys v0.33.0
-	golang.zabbix.com/sdk v1.2.2-0.20250530120847-11563a4dfc74
+	golang.zabbix.com/sdk v1.2.2-0.20250801112124-540c5cdb574f
 )
 
 require (
