@@ -88,6 +88,7 @@ build: .build_rc
 ifeq ($(OS),Windows_NT)
 	set GOOS=$(GOOS)
 	set GOARCH=$(GOARCH)
+	set CGO_ENABLED=1
 	go build -o "$(TOPDIR)/$(PACKAGE)"
 else
 	GOOS="$(GOOS)" GOARCH="$(GOARCH)" go build -o "$(TOPDIR)/$(PACKAGE)"
