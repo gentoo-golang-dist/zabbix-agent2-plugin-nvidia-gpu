@@ -11,11 +11,9 @@ Bug fixes:
 ...G...... [ZBX-26491] fixed memory and register location counters (esneiders)
 
 --------------------------------------------------------------------------------
-Changes for 7.4.5rc1
+Changes for 7.4.5
 
-New features:
-
-Bug fixes:
+7.4.4 was released as 7.4.5 without any changes
 
 --------------------------------------------------------------------------------
 Changes for 7.4.4
