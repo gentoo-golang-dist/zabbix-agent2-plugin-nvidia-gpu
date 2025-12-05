@@ -40,11 +40,7 @@ var (
 	_ plugin.Runner       = (*NvmlPlugin)(nil)
 )
 
-type nvmlMetric struct {
-	metric  *metric.Metric
-	handler handlers.HandlerFunc
-}
-
+// NvmlPlugin holds plugin parameters.
 type NvmlPlugin struct {
 	plugin.Base
 	config        *pluginConfig
@@ -53,6 +49,12 @@ type NvmlPlugin struct {
 	setNvmlRunner func() error
 }
 
+type nvmlMetric struct {
+	metric  *metric.Metric
+	handler handlers.HandlerFunc
+}
+
+// New creates a new plugin implementation.
 func New() (*NvmlPlugin, error) {
 	p := &NvmlPlugin{}
 	p.setNvmlRunner = p.setRunner
@@ -68,6 +70,7 @@ func New() (*NvmlPlugin, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to register metrics")
 	}
+
 	return p, nil
 }
 

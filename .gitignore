@@ -106,5 +106,5 @@ zabbix-agent2-plugin-nvidia-*
 zabbix-agent2-plugin-nvidia
 nvidia
 
-# idea
-.idea
+# Goland
+.idea/
