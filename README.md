@@ -48,7 +48,7 @@ To build the NVIDIA GPU Plugin for Zabbix Agent 2 from source, ensure you have t
 
 <!-- TOC --><a name="prerequisites"></a>
 ### Prerequisites
-- **Go Language**: Version 1.23 or newer (required only for building the plugin from the source).
+- **Go Language**: If building from source: Latest or second-latest stable Go version (see go.mod for exact version requirements)
 - **CGO Enabled**: The build process requires `CGO_ENABLED=1` for proper compilation.
 - **C Compiler**: A C compiler is required for building with `CGO_ENABLED=1`.
 
