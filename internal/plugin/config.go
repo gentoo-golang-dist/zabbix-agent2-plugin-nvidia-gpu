@@ -20,14 +20,15 @@ package plugin
 import (
 	"golang.zabbix.com/sdk/conf"
 	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/log"
 	"golang.zabbix.com/sdk/plugin"
 )
 
 type pluginConfig struct {
 	System plugin.SystemOptions `conf:"optional"` //nolint:staticcheck
 
-	// Timeout is plugin connection timeout.
-	Timeout int `conf:"optional,range=1:30"`
+	// Deprecated old timeout value. Only used to issue a deprecation warning.
+	LegacyTimeout int `conf:"name=Timeout,optional,range=1:30"`
 }
 
 // Configure implements the Configurator interface.
@@ -44,8 +45,12 @@ func (p *NvmlPlugin) Configure(global *plugin.GlobalOptions, options any) {
 
 	p.config = pConfig
 
-	if p.config.Timeout == 0 {
-		p.config.Timeout = global.Timeout
+	if p.config.LegacyTimeout != 0 {
+		log.Debugf("[NVIDIA] Config value 'Plugins.NVIDIA.Timeout' is deprecated.")
+	}
+
+	if p.config.LegacyTimeout == 0 {
+		p.config.LegacyTimeout = global.Timeout
 	}
 }
 

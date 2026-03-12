@@ -54,14 +54,14 @@ func Test_nvmlPlugin_Configure(t *testing.T) {
 				[]byte(`Timeout=30`),
 			},
 			&pluginConfig{
-				Timeout: 30,
+				LegacyTimeout: 30,
 			},
 		},
 		{
 			"+prevConfig",
 			fields{
 				&pluginConfig{
-					Timeout: 44,
+					LegacyTimeout: 44,
 				},
 			},
 			args{
@@ -69,7 +69,7 @@ func Test_nvmlPlugin_Configure(t *testing.T) {
 				[]byte(`Timeout=30`),
 			},
 			&pluginConfig{
-				Timeout: 30,
+				LegacyTimeout: 30,
 			},
 		},
 		{
@@ -80,7 +80,7 @@ func Test_nvmlPlugin_Configure(t *testing.T) {
 				[]byte(``),
 			},
 			&pluginConfig{
-				Timeout: 30,
+				LegacyTimeout: 30,
 			},
 		},
 		{

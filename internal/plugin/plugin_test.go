@@ -45,6 +45,10 @@ func (m *MockCtxProvider) Timeout() int {
 	return m.timeout
 }
 
+func (ctx *MockCtxProvider) LegacyTimeout() bool {
+	return false
+}
+
 func (m runnerSetMock) init() error {
 	if m.failed {
 		return errs.New("fail")

@@ -18,9 +18,6 @@
 package plugin
 
 import (
-	"context"
-	"time"
-
 	"golang.zabbix.com/plugin/nvidia/internal/plugin/handlers"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
 	"golang.zabbix.com/sdk/errs"
@@ -136,7 +133,7 @@ func (p *NvmlPlugin) Stop() {
 }
 
 // Export collects all the metrics.
-func (p *NvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.ContextProvider) (any, error) {
+func (p *NvmlPlugin) Export(key string, rawParams []string, ctx plugin.ContextProvider) (any, error) {
 	m, ok := p.metrics[key]
 	if !ok {
 		return nil, errs.Wrapf(zbxerr.ErrorUnsupportedMetric, "unknown metric %q", key)
@@ -151,16 +148,6 @@ func (p *NvmlPlugin) Export(key string, rawParams []string, pluginCtx plugin.Con
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to set default params")
 	}
-
-	timeout := time.Second * time.Duration(p.config.Timeout)
-	if pluginCtx != nil && timeout < time.Second*time.Duration(pluginCtx.Timeout()) {
-		timeout = time.Second * time.Duration(pluginCtx.Timeout())
-	}
-
-	ctx, cancel := context.WithTimeout(
-		context.Background(), timeout,
-	)
-	defer cancel()
 
 	res, err := m.handler(ctx, metricParams, extraParams...)
 	if err != nil {
