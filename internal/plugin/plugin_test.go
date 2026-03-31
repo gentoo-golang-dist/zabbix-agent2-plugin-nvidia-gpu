@@ -45,7 +45,7 @@ func (m *MockCtxProvider) Timeout() int {
 	return m.timeout
 }
 
-func (ctx *MockCtxProvider) LegacyTimeout() bool {
+func (m *MockCtxProvider) LegacyTimeout() bool {
 	return false
 }
 
