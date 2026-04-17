@@ -34,7 +34,8 @@ import (
 
 type MockCtxProvider struct {
 	plugin.ContextProvider
-	timeout int
+	timeout       int
+	legacyTimeout bool
 }
 
 type runnerSetMock struct {
@@ -46,7 +47,7 @@ func (m *MockCtxProvider) Timeout() int {
 }
 
 func (m *MockCtxProvider) LegacyTimeout() bool {
-	return false
+	return m.legacyTimeout
 }
 
 func (m runnerSetMock) init() error {
@@ -56,6 +57,14 @@ func (m runnerSetMock) init() error {
 
 	return nil
 }
+
+type mockLogger struct {
+	log.Logger
+}
+
+func (m mockLogger) Tracef(format string, args ...any) {}
+
+func (m mockLogger) Debugf(format string, args ...any) {}
 
 func TestMain(m *testing.M) {
 	log.DefaultLogger = stdlog.New(os.Stdout, "", stdlog.LstdFlags)
@@ -159,6 +168,8 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 				},
 				config: &pluginConfig{},
 			}
+
+			p.Base.Logger = mockLogger{}
 
 			ctxPrvider := MockCtxProvider{timeout: 2}
 

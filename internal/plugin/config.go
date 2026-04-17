@@ -27,7 +27,9 @@ import (
 type pluginConfig struct {
 	System plugin.SystemOptions `conf:"optional"` //nolint:staticcheck
 
-	// Deprecated old timeout value. Only used to issue a deprecation warning.
+	// LegacyTimeout timeout used for item execution.
+	//
+	// Deprecated: old timeout value kept for compatibility.
 	LegacyTimeout int `conf:"name=Timeout,optional,range=1:30"`
 }
 

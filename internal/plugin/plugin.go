@@ -18,6 +18,8 @@
 package plugin
 
 import (
+	"time"
+
 	"golang.zabbix.com/plugin/nvidia/internal/plugin/handlers"
 	"golang.zabbix.com/plugin/nvidia/pkg/nvml"
 	"golang.zabbix.com/sdk/errs"
@@ -148,6 +150,14 @@ func (p *NvmlPlugin) Export(key string, rawParams []string, ctx plugin.ContextPr
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to set default params")
 	}
+
+	if ctx.LegacyTimeout() {
+		p.Debugf("using legacy timeout")
+
+		ctx = plugin.OverrideTimeout(ctx, time.Now(), p.config.LegacyTimeout)
+	}
+
+	p.Tracef("request timeout set to: %d", ctx.Timeout())
 
 	res, err := m.handler(ctx, metricParams, extraParams...)
 	if err != nil {
