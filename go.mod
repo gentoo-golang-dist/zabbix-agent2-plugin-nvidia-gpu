@@ -1,12 +1,12 @@
 module golang.zabbix.com/plugin/nvidia
 
-go 1.24.10
+go 1.25.9
 
 require (
 	github.com/google/go-cmp v0.6.0
 	golang.org/x/sync v0.14.0
 	golang.org/x/sys v0.33.0
-	golang.zabbix.com/sdk v1.2.2-0.20251205121622-d63cfc5d737a
+	golang.zabbix.com/sdk v1.2.2-0.20260513084949-98586186ba5d
 )
 
 require (
