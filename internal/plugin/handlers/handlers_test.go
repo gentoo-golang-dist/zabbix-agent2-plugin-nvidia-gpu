@@ -3461,6 +3461,7 @@ func TestHandler_getDeviceByUUID(t *testing.T) {
 
 	type TestDevice struct {
 		nvml.Device
+
 		UUID string
 	}
 

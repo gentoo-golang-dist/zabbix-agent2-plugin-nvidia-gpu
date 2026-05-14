@@ -168,6 +168,8 @@ linters:
           - maintidx
           - revive
           - wrapcheck
+          - noinlineerr
+          - decorder
         path: _test\.go
     paths:
       - third_party$

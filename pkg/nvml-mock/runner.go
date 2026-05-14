@@ -38,6 +38,7 @@ type Mocker interface {
 // MockRunner is mock for NVML Runner.
 type MockRunner struct {
 	nvml.Runner
+
 	expectations []*Expectation
 	callIdx      int
 	t            *testing.T

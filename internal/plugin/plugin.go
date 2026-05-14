@@ -42,6 +42,7 @@ var (
 // NvmlPlugin holds plugin parameters.
 type NvmlPlugin struct {
 	plugin.Base
+
 	config        *pluginConfig
 	metrics       map[string]*nvmlMetric
 	nvmlRunner    nvml.Runner

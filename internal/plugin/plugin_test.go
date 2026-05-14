@@ -34,6 +34,7 @@ import (
 
 type MockCtxProvider struct {
 	plugin.ContextProvider
+
 	timeout       int
 	legacyTimeout bool
 }
@@ -169,7 +170,7 @@ func Test_nvmlPlugin_Export(t *testing.T) {
 				config: &pluginConfig{},
 			}
 
-			p.Base.Logger = mockLogger{}
+			p.Logger = mockLogger{}
 
 			ctxPrvider := MockCtxProvider{timeout: 2}
 

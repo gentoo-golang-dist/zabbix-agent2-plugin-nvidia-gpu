@@ -32,6 +32,7 @@ var (
 // MockDevice is mock for NVML device.
 type MockDevice struct {
 	nvml.Device
+
 	expectations []*Expectation
 	callIdx      int
 	t            *testing.T
@@ -329,8 +330,8 @@ func (m *MockDevice) GetPCIeThroughput(pcie nvml.PcieMetricType) (uint, error) {
 // GetMemoryInfoV2 is mock function.
 func (m *MockDevice) GetMemoryInfoV2() (*nvml.MemoryInfoV2, error) {
 	m.t.Helper()
-	res, err := m.handleFunctionCall("GetMemoryInfoV2")
 
+	res, err := m.handleFunctionCall("GetMemoryInfoV2")
 	if err != nil {
 		return nil, err
 	}
@@ -346,8 +347,8 @@ func (m *MockDevice) GetMemoryInfoV2() (*nvml.MemoryInfoV2, error) {
 // GetMemoryInfo is mock function.
 func (m *MockDevice) GetMemoryInfo() (*nvml.MemoryInfo, error) {
 	m.t.Helper()
-	res, err := m.handleFunctionCall("GetMemoryInfo")
 
+	res, err := m.handleFunctionCall("GetMemoryInfo")
 	if err != nil {
 		return nil, err
 	}
