@@ -72,6 +72,9 @@ The `Plugins.NVIDIA.System.Path` variable must be set in the Zabbix Agent 2 conf
 To configure plugins, use the Zabbix Agent configuration file.
 
 - **`Plugins.NVIDIA.Timeout`**: Specifies the maximum time (in seconds) to wait for a server response during connection attempts and subsequent operations in the session. The global item-type timeout or individual item timeout will override this value if greater.
+
+The value is now *deprecated*, and used only for requests coming from Zabbix servers old than 7.0 version.
+
   - **Default**: Equal to the global `Timeout` parameter in the Zabbix Agent 2 configuration file.
   - **Limits**: 1-30 seconds.
 
