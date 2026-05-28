@@ -20,7 +20,6 @@ package plugin
 import (
 	"golang.zabbix.com/sdk/conf"
 	"golang.zabbix.com/sdk/errs"
-	"golang.zabbix.com/sdk/log"
 	"golang.zabbix.com/sdk/plugin"
 )
 
@@ -48,7 +47,7 @@ func (p *NvmlPlugin) Configure(global *plugin.GlobalOptions, options any) {
 	p.config = pConfig
 
 	if p.config.LegacyTimeout != 0 {
-		log.Debugf("[NVIDIA] Config value 'Plugins.NVIDIA.Timeout' is deprecated.")
+		p.Debugf("config value 'Plugins.NVIDIA.Timeout' is deprecated")
 	}
 
 	if p.config.LegacyTimeout == 0 {
