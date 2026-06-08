@@ -45,7 +45,7 @@ const copyrightMessage = //
    limitations under the License.
 `
 
-//nolint:gochecknoglobals,revive // required ALL_CAPS by build scripts
+//nolint:gochecknoglobals,revive,nolintlint // required ALL_CAPS by build scripts
 var (
 	PLUGIN_VERSION_MAJOR = 8
 	PLUGIN_VERSION_MINOR = 0
@@ -93,9 +93,9 @@ func main() {
 
 func exitWithError(err error) {
 	fmt.Fprintf(os.Stderr, "%s\n", err.Error())
-	os.Exit(1) //nolint:revive // called only in main.
+	os.Exit(1) //nolint:revive,nolintlint // called only in main.
 }
 
 func exitGracefully() {
-	os.Exit(0) //nolint:revive // called only in main.
+	os.Exit(0) //nolint:revive,nolintlint // called only in main.
 }
