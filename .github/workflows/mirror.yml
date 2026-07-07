@@ -16,4 +16,4 @@
           with:
             token: ${{ secrets.PUSH_TOKEN }}
             
-            upstream-repo: zabbix-agent2-plugin-nvidia-gpu
+            upstream-repo: https://git.zabbix.com/scm/ap/nvidia-gpu.git
